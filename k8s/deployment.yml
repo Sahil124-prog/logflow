@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: logflow-api
+  namespace: default
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: logflow-api
+  template:
+    metadata:
+      labels:
+        app: logflow-api
+    spec:
+      containers:
+        - name: logflow-api
+          image: logflow-api:latest
+          ports:
+            - containerPort: 5000
+          envFrom:
+            - configMapRef:
+                name: logflow-config
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"

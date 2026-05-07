@@ -24,3 +24,4 @@ router.get("/", async (req, res) => {
 });
 
 module.exports = { router, logsReceived, activeAlertGauge };
+exports.default = router;

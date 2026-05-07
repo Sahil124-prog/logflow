@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: logflow-cleanup
+  namespace: default
+spec:
+  schedule: "0 0 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: cleanup
+              image: logflow-api:latest
+              command: ["node", "src/cleanup.js"]
+              envFrom:
+                - configMapRef:
+                    name: logflow-config
+          restartPolicy: OnFailure
+
+          

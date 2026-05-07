@@ -11,7 +11,7 @@ const serviceRoutes = require("./routes/services");
 const alertRoutes = require("./routes/alerts");
 const statsRoutes = require("./routes/stats");
 const exportRoutes = require("./routes/exportLogs");
-const metricsRoutes = require("./routes/metrics");
+const { router: metricsRoutes } = require("./routes/metrics");
 
 const alertWorker = require("./workers/alertWorker");
 
