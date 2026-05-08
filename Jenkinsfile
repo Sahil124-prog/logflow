@@ -45,7 +45,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 bat """
-                    kubectl set image deployment/logflow-api logflow-api=%REGISTRY%/%IMAGE_NAME%:%BUILD_NUMBER%
+                     kubectl --kubeconfig="C:\\ProgramData\\Jenkins\\.jenkins\\config" set image deployment/logflow-api logflow-api=%REGISTRY%/%IMAGE_NAME%:%BUILD_NUMBER%
                 """
             }
         }
