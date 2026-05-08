@@ -7,6 +7,7 @@ pipeline {
     }
 
     stages {
+
         stage('Checkout') {
             steps {
                 checkout scm
@@ -15,13 +16,13 @@ pipeline {
 
         stage('Install') {
             steps {
-                sh 'npm ci'
+                bat 'npm ci'
             }
         }
 
         stage('Test') {
             steps {
-                sh 'npm test'
+                bat 'npm test'
             }
         }
 
@@ -32,21 +33,20 @@ pipeline {
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
-                    sh '''
-                        docker build -t ${env.REGISTRY}/${env.IMAGE_NAME}:${BUILD_NUMBER} .
-                        docker login -u $DOCKER_USER -p $DOCKER_PASS
-                        docker push ${env.REGISTRY}/${env.IMAGE_NAME}:${BUILD_NUMBER}
-                    '''
+                    bat """
+                        docker build -t %REGISTRY%/%IMAGE_NAME%:%BUILD_NUMBER% .
+                        docker login -u %DOCKER_USER% -p %DOCKER_PASS%
+                        docker push %REGISTRY%/%IMAGE_NAME%:%BUILD_NUMBER%
+                    """
                 }
             }
         }
 
         stage('Deploy') {
             steps {
-                sh '''
-                    kubectl set image deployment/logflow-api \
-                    logflow-api=${env.REGISTRY}/${env.IMAGE_NAME}:${BUILD_NUMBER}
-                '''
+                bat """
+                    kubectl set image deployment/logflow-api logflow-api=%REGISTRY%/%IMAGE_NAME%:%BUILD_NUMBER%
+                """
             }
         }
     }
@@ -59,9 +59,7 @@ pipeline {
             echo 'Pipeline failed — LogFlow NOT deployed.'
         }
         always {
-            sh 'docker logout'
+            bat 'docker logout'
         }
     }
 }
-
-
