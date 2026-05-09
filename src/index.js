@@ -1,7 +1,6 @@
 require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
-const redis = require("redis");
 const http = require("http");
 const { Server } = require("socket.io");
 
@@ -11,8 +10,8 @@ const serviceRoutes = require("./routes/services");
 const alertRoutes = require("./routes/alerts");
 const statsRoutes = require("./routes/stats");
 const exportRoutes = require("./routes/exportLogs");
-const { router: metricsRoutes } = require("./routes/metrics");
-
+const metricsRouter = require("./routes/metrics");
+const { apiRequestDuration } = require("./metrics");
 const alertWorker = require("./workers/alertWorker");
 
 const app = express();
@@ -23,20 +22,37 @@ const io = new Server(server, {
 
 app.use(express.json());
 
-// attach io to every request so routes can emit
+// Attach io to every request
 app.use((req, res, next) => {
   req.io = io;
   next();
 });
 
-// routes
+// Request duration middleware — BEFORE routes
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on("finish", () => {
+    const duration = (Date.now() - start) / 1000;
+    apiRequestDuration.observe(
+      {
+        method: req.method,
+        route: req.path,
+        status_code: res.statusCode,
+      },
+      duration,
+    );
+  });
+  next();
+});
+
+// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/logs", logRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/alerts", alertRoutes);
 app.use("/api/stats", statsRoutes);
 app.use("/api/export", exportRoutes);
-app.use("/metrics", metricsRoutes);
+app.use("/metrics", metricsRouter);
 
 // MongoDB
 mongoose
@@ -44,12 +60,12 @@ mongoose
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB error:", err));
 
-// Socket.io connection
+// Socket.io
 io.on("connection", (socket) => {
   console.log("Dashboard connected:", socket.id);
 });
 
-// start alert worker
+// Start alert worker
 alertWorker();
 
 const PORT = process.env.PORT || 5000;
