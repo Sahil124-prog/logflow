@@ -40,4 +40,20 @@ router.post("/", rateLimiter, async (req, res) => {
   }
 });
 
+router.get("/", auth, async (req, res) => {
+  const { service, level, search, from, to } = req.query;
+  const query = {};
+  if (service) query.service = service;
+  if (level) query.level = level;
+  if (search) query.message = { $regex: search, $options: "i" };
+  if (from || to) {
+    query.timestamp = {};
+    if (from) query.timestamp.$gte = new Date(from);
+    if (to) query.timestamp.$lte = new Date(to);
+  }
+  res.set("Cache-Control", "no-store");
+  const logs = await Log.find(query).sort({ timestamp: -1 }).limit(500);
+  res.json(logs);
+});
+
 module.exports = router;

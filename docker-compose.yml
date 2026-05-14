@@ -51,9 +51,34 @@ services:
     networks:
       - logflow-net
 
+  localstack:
+    image: localstack/localstack:3.0.0
+    container_name: logflow-localstack
+    restart: unless-stopped
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3,iam
+      - DEFAULT_REGION=us-east-1
+      - AWS_DEFAULT_REGION=us-east-1
+    networks:
+      - logflow-net
+    volumes:
+      - localstack-data:/var/lib/localstack
+    depends_on:
+      - api
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: logflow-client
+    networks:
+      - logflow-net
+    
 networks:
   logflow-net:
     driver: bridge
 
 volumes:
   mongo-data:
+  localstack-data:

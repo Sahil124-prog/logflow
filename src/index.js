@@ -34,15 +34,21 @@ app.use((req, res, next) => {
   res.on("finish", () => {
     const duration = (Date.now() - start) / 1000;
     apiRequestDuration.observe(
-      {
-        method: req.method,
-        route: req.path,
-        status_code: res.statusCode,
-      },
+      { method: req.method, route: req.path, status_code: res.statusCode },
       duration,
     );
   });
   next();
+});
+
+// Health endpoint — used by React dashboard SystemHealth component
+app.get("/health", (req, res) => {
+  res.json({
+    status: "ok",
+    mongo: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // Routes
@@ -66,7 +72,7 @@ io.on("connection", (socket) => {
 });
 
 // Start alert worker
-alertWorker();
+alertWorker(io);
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`LogFlow API running on port ${PORT}`));
