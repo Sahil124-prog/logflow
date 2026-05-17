@@ -1,4 +1,3 @@
-
 services:
   api:
     build: .
@@ -67,6 +66,7 @@ services:
       - localstack-data:/var/lib/localstack
     depends_on:
       - api
+
   client:
     build:
       context: ./client
@@ -74,7 +74,17 @@ services:
     container_name: logflow-client
     networks:
       - logflow-net
-    
+
+  simulator:
+    build:
+      context: ./services
+      dockerfile: Dockerfile
+    container_name: logflow-simulator
+    depends_on:
+      - api
+    networks:
+      - logflow-net
+
 networks:
   logflow-net:
     driver: bridge

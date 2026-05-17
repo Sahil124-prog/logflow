@@ -13,6 +13,7 @@ const exportRoutes = require("./routes/exportLogs");
 const metricsRouter = require("./routes/metrics");
 const { apiRequestDuration } = require("./metrics");
 const alertWorker = require("./workers/alertWorker");
+const deployRoutes = require("./routes/deploys");
 
 const app = express();
 const server = http.createServer(app);
@@ -59,6 +60,7 @@ app.use("/api/alerts", alertRoutes);
 app.use("/api/stats", statsRoutes);
 app.use("/api/export", exportRoutes);
 app.use("/metrics", metricsRouter);
+app.use("/api/deploys", deployRoutes);
 
 // MongoDB
 mongoose
