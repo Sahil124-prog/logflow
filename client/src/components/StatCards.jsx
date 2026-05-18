@@ -45,7 +45,7 @@ export default function StatCards({ logs, alerts }) {
           <div
             style={{
               fontSize: "12px",
-              color: "var(--muted2)",
+              color: "var(--text2)",
               marginBottom: "6px",
             }}
           >
@@ -60,12 +60,12 @@ export default function StatCards({ logs, alerts }) {
                 ? "var(--danger)"
                 : c.warn
                   ? "var(--warn)"
-                  : "#fff",
+                  : "var(--text)",
             }}
           >
             {c.value}
           </div>
-          <div style={{ fontSize: "11px", color: "var(--muted)" }}>{c.sub}</div>
+          <div style={{ fontSize: "11px", color: "var(--text3)" }}>{c.sub}</div>
         </div>
       ))}
     </div>

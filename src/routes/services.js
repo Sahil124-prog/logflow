@@ -3,7 +3,7 @@ const router = express.Router();
 const Log = require("../models/Log");
 const auth = require("../middleware/auth");
 
-// GET /api/services — returns all services with health status
+
 router.get("/", auth, async (req, res) => {
   const services = await Log.distinct("service");
 

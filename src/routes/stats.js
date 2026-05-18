@@ -4,7 +4,7 @@ const Log = require("../models/Log");
 const Alert = require("../models/Alert");
 const auth = require("../middleware/auth");
 
-// GET /api/stats — aggregated dashboard numbers
+
 router.get("/", auth, async (req, res) => {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);

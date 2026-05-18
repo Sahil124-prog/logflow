@@ -23,13 +23,13 @@ const io = new Server(server, {
 
 app.use(express.json());
 
-// Attach io to every request
+
 app.use((req, res, next) => {
   req.io = io;
   next();
 });
 
-// Request duration middleware — BEFORE routes
+
 app.use((req, res, next) => {
   const start = Date.now();
   res.on("finish", () => {
@@ -42,7 +42,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Health endpoint — used by React dashboard SystemHealth component
+
 app.get("/health", (req, res) => {
   res.json({
     status: "ok",
@@ -52,7 +52,7 @@ app.get("/health", (req, res) => {
   });
 });
 
-// Routes
+
 app.use("/api/auth", authRoutes);
 app.use("/api/logs", logRoutes);
 app.use("/api/services", serviceRoutes);
@@ -62,18 +62,18 @@ app.use("/api/export", exportRoutes);
 app.use("/metrics", metricsRouter);
 app.use("/api/deploys", deployRoutes);
 
-// MongoDB
+
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB error:", err));
 
-// Socket.io
+
 io.on("connection", (socket) => {
   console.log("Dashboard connected:", socket.id);
 });
 
-// Start alert worker
+
 alertWorker(io);
 
 const PORT = process.env.PORT || 5000;

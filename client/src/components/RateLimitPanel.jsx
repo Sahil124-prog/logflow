@@ -12,7 +12,7 @@ export default function RateLimitPanel({ auth }) {
     setResults([]);
     const newResults = [];
 
-    // Fire 5 rapid requests to trigger the sliding window limit
+    
     for (let i = 1; i <= 5; i++) {
       try {
         await axios.post(

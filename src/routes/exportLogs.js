@@ -14,7 +14,7 @@ const s3 = new S3Client({
   },
 });
 
-// POST /api/export — export last 1000 logs to S3
+
 router.post("/", auth, async (req, res) => {
   const logs = await Log.find().sort({ timestamp: -1 }).limit(1000);
 

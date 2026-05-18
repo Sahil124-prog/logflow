@@ -3,6 +3,9 @@ import axios from "axios";
 
 const API = "http://localhost:8081";
 
+
+const JENKINS_URL = "http://localhost:8080/job/logflow-pipeline";
+
 export default function DeployHistory({ auth }) {
   const [deploys, setDeploys] = useState([]);
   const [seeding, setSeeding] = useState(false);
@@ -150,9 +153,43 @@ export default function DeployHistory({ auth }) {
                     fontSize: "13px",
                     fontFamily: "var(--mono)",
                     marginBottom: "2px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
                   }}
                 >
-                  Build #{d.buildNumber}
+                  <a
+                    href={`${JENKINS_URL}/${d.buildNumber}/`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      color: "var(--accent)",
+                      textDecoration: "none",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                    onMouseOver={(e) =>
+                      (e.target.style.textDecoration = "underline")
+                    }
+                    onMouseOut={(e) => (e.target.style.textDecoration = "none")}
+                  >
+                    Build #{d.buildNumber}
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                      <polyline points="15 3 21 3 21 9"></polyline>
+                      <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                  </a>
                 </div>
                 <div style={{ fontSize: "11px", color: "var(--muted)" }}>
                   {d.imageTag} · {new Date(d.deployedAt).toLocaleString()}

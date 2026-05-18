@@ -8,7 +8,7 @@ const alertSchema = new mongoose.Schema(
     resolved: { type: Boolean, default: false },
     resolvedAt: { type: Date, default: null },
   },
-  { timestamps: true }, // This automatically adds createdAt and updatedAt
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("Alert", alertSchema);

@@ -16,7 +16,7 @@ export default function AlertPanel({ alerts, onResolve }) {
     <div
       style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}
     >
-      {/* Active alerts */}
+      
       <div
         style={{
           background: "var(--surface)",
@@ -163,7 +163,7 @@ export default function AlertPanel({ alerts, onResolve }) {
         )}
       </div>
 
-      {/* Recent incidents */}
+      
       <div
         style={{
           background: "var(--surface)",
