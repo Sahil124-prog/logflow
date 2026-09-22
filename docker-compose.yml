@@ -5,8 +5,11 @@ services:
     restart: unless-stopped
     env_file: .env
     depends_on:
-      - mongodb
-      - redis
+      mongodb:
+        condition: service_healthy   # ← waits for healthcheck to pass, not just "started"
+      redis:
+        condition: service_healthy
+
     networks:
       - logflow-net
 
@@ -14,6 +17,12 @@ services:
     image: mongo:6
     container_name: logflow-mongodb
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     volumes:
       - mongo-data:/data/db
     networks:
@@ -23,6 +32,12 @@ services:
     image: redis:7-alpine
     container_name: logflow-redis
     restart: unless-stopped
+    healthcheck:
+      test : ["CMD","redis-cli","ping"]
+      interval: 10s
+      retries: 5
+      start_period: 10s
+      timeout: 5s
     networks:
       - logflow-net
 
@@ -45,8 +60,17 @@ services:
     restart: unless-stopped
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
     ports:
       - "9090:9090"
+    networks:
+      - logflow-net
+  
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    restart: unless-stopped
     networks:
       - logflow-net
 
@@ -92,3 +116,6 @@ networks:
 volumes:
   mongo-data:
   localstack-data:
+  prometheus-data:
+  
+    
