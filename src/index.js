@@ -12,7 +12,8 @@ const statsRoutes = require("./routes/stats");
 const exportRoutes = require("./routes/exportLogs");
 const metricsRouter = require("./routes/metrics");
 const { apiRequestDuration } = require("./metrics");
-const alertWorker = require("./workers/alertWorker");
+
+
 const deployRoutes = require("./routes/deploys");
 const startDashboardConsumer = require("./consumers/dashboardConsumer");
 
@@ -68,7 +69,8 @@ io.on("connection", (socket) => {
   console.log("Dashboard connected:", socket.id);
 });
 
-alertWorker(io);
+
+
 startDashboardConsumer(io);
 
 const PORT = process.env.PORT || 5000;

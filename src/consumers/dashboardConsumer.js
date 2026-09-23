@@ -22,12 +22,17 @@ async function startDashboardConsumer(io, retryDelayMs = 5000) {
     channel.consume(QUEUE, (msg) => {
       if (!msg) return;
       try {
-        const { data: log } = JSON.parse(msg.content.toString());
+        const { eventType, data } = JSON.parse(msg.content.toString());
 
-        io.emit("new-log", log);
-
-        if (logsReceivedTotal) {
-          logsReceivedTotal.inc({ level: log.level, service: log.service });
+        if (eventType === "log.created") {
+          io.emit("new-log", data);
+          if (logsReceivedTotal) {
+            logsReceivedTotal.inc({ level: data.level, service: data.service });
+          }
+        } else if (eventType === "alert.created") {
+          io.emit("new-alert", data);
+        } else if (eventType === "alert.updated") {
+          io.emit("alert-updated", data);
         }
 
         channel.ack(msg);
@@ -36,12 +41,11 @@ async function startDashboardConsumer(io, retryDelayMs = 5000) {
           "[dashboardConsumer] failed to process message:",
           err.message,
         );
-        // Drop malformed messages rather than requeue forever — real
-        // retry/DLQ handling for genuine processing failures comes in
-        // Phase 0.7. For now this only guards against unparsable payloads.
         channel.nack(msg, false, false);
       }
     });
+
+    
 
     console.log("[dashboardConsumer] listening on", QUEUE);
 
