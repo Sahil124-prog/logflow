@@ -6,23 +6,47 @@ services:
     env_file: .env
     depends_on:
       mongodb:
-        condition: service_healthy   # ← waits for healthcheck to pass, not just "started"
+        condition: service_started
       redis:
+        condition: service_started
+      rabbitmq:
         condition: service_healthy
-
     networks:
       - logflow-net
+
+  log-ingestion-service:
+    build: ./log-ingestion-service
+    container_name: logflow-log-ingestion-service
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      mongodb:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - logflow-net
+    environment:
+      - PORT=5001
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: logflow-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "15672:15672"   # management UI — http://localhost:15672 (guest/guest)
+    networks:
+      - logflow-net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   mongodb:
     image: mongo:6
     container_name: logflow-mongodb
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
     volumes:
       - mongo-data:/data/db
     networks:
@@ -32,12 +56,6 @@ services:
     image: redis:7-alpine
     container_name: logflow-redis
     restart: unless-stopped
-    healthcheck:
-      test : ["CMD","redis-cli","ping"]
-      interval: 10s
-      retries: 5
-      start_period: 10s
-      timeout: 5s
     networks:
       - logflow-net
 
@@ -60,17 +78,8 @@ services:
     restart: unless-stopped
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus-data:/prometheus
     ports:
       - "9090:9090"
-    networks:
-      - logflow-net
-  
-  grafana:
-    image: grafana/grafana:latest
-    ports:
-      - "3001:3000"
-    restart: unless-stopped
     networks:
       - logflow-net
 
@@ -104,8 +113,10 @@ services:
       context: ./services
       dockerfile: Dockerfile
     container_name: logflow-simulator
+    environment:
+      - LOG_INGESTION_URL=http://log-ingestion-service:5001
     depends_on:
-      - api
+      - log-ingestion-service
     networks:
       - logflow-net
 
@@ -116,6 +127,3 @@ networks:
 volumes:
   mongo-data:
   localstack-data:
-  prometheus-data:
-  
-    

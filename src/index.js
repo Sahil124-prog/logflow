@@ -14,6 +14,7 @@ const metricsRouter = require("./routes/metrics");
 const { apiRequestDuration } = require("./metrics");
 const alertWorker = require("./workers/alertWorker");
 const deployRoutes = require("./routes/deploys");
+const startDashboardConsumer = require("./consumers/dashboardConsumer");
 
 const app = express();
 const server = http.createServer(app);
@@ -23,12 +24,10 @@ const io = new Server(server, {
 
 app.use(express.json());
 
-
 app.use((req, res, next) => {
   req.io = io;
   next();
 });
-
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -42,7 +41,6 @@ app.use((req, res, next) => {
   next();
 });
 
-
 app.get("/health", (req, res) => {
   res.json({
     status: "ok",
@@ -51,7 +49,6 @@ app.get("/health", (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
-
 
 app.use("/api/auth", authRoutes);
 app.use("/api/logs", logRoutes);
@@ -62,19 +59,17 @@ app.use("/api/export", exportRoutes);
 app.use("/metrics", metricsRouter);
 app.use("/api/deploys", deployRoutes);
 
-
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB error:", err));
 
-
 io.on("connection", (socket) => {
   console.log("Dashboard connected:", socket.id);
 });
 
-
 alertWorker(io);
+startDashboardConsumer(io);
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`LogFlow API running on port ${PORT}`));

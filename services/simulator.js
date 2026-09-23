@@ -1,6 +1,10 @@
 const axios = require("axios");
 
-const API = "http://api:5000";
+// Was hardcoded to http://api:5000 — logs are now written through
+// log-ingestion-service, not the old monolithic api. Made env-driven
+// to match the pattern already used by the per-service logger.js files.
+const API =
+  process.env.LOG_INGESTION_URL || "http://log-ingestion-service:5001";
 
 const services = [
   { name: "auth-service", errorRate: 0.15 },
@@ -40,12 +44,12 @@ const messages = {
 async function sendLog(service, level, message) {
   try {
     await axios.post(
-      `${API}/api/logs`,
+      `${API}/`,
       { service, level, message, timestamp: new Date().toISOString() },
       { timeout: 3000 },
     );
   } catch (e) {
-    // silently fail — API might not be ready yet during startup
+    // silently fail — log-ingestion-service might not be ready yet during startup
   }
 }
 
@@ -70,8 +74,8 @@ async function simulate() {
   }
 }
 
-// Wait 20 seconds for API to fully start, then simulate every 8 seconds
-console.log("Simulator waiting for API to start...");
+// Wait 20 seconds for log-ingestion-service to fully start, then simulate every 8 seconds
+console.log("Simulator waiting for log-ingestion-service to start...");
 setTimeout(() => {
   console.log("Simulator started — sending logs every 8 seconds");
   simulate();
