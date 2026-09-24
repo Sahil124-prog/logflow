@@ -40,6 +40,16 @@ services:
         condition: service_healthy
     networks:
       - logflow-net
+  notification-service:
+    build: ./notification-service
+    container_name: logflow-notification-service
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - logflow-net
 
   rabbitmq:
     image: rabbitmq:3-management-alpine

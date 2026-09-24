@@ -1,6 +1,9 @@
 const amqp = require("amqplib");
 const RABBITMQ_URL = process.env.RABBITMQ_URL || "amqp://rabbitmq:5672";
 const EXCHANGE = "logflow.events";
+const { randomUUID } = require("crypto");
+
+
 let channel = null;
 
 async function connectPublisher(retryDelayMs = 5000) {
@@ -31,7 +34,7 @@ function publishEvent(eventType, data) {
   channel.publish(
     EXCHANGE,
     "",
-    Buffer.from(JSON.stringify({ eventType, data })),
+    Buffer.from(JSON.stringify({ eventId: randomUUID(), eventType, data })),
     { persistent: true },
   );
 }
