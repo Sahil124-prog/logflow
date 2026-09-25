@@ -92,7 +92,7 @@ pipeline {
         }
 
         stage('Install') {
-            steps { bat 'npm ci' }
+            steps { bat 'npm install' }
         }
 
         stage('Test') {
