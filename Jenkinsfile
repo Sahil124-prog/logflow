@@ -143,20 +143,28 @@ pipeline {
     }
 
     post {
-        success {
-            echo 'LogFlow build & push succeeded!'
-            powershell """
+    success {
+        echo 'LogFlow build & push succeeded!'
+        powershell """
+        try {
             Invoke-RestMethod -Uri "http://localhost:8081/api/deploys" -Method Post -Headers @{"Content-Type"="application/json"} -Body '{"buildNumber": "${env.BUILD_NUMBER}", "status": "success"}'
-            """
+        } catch {
+            Write-Host "Deploy webhook unreachable — skipping (local stack likely not running)."
         }
-        failure {
-            echo 'Pipeline failed — LogFlow build/push did NOT complete.'
-            powershell """
+        """
+    }
+    failure {
+        echo 'Pipeline failed — LogFlow build/push did NOT complete.'
+        powershell """
+        try {
             Invoke-RestMethod -Uri "http://localhost:8081/api/deploys" -Method Post -Headers @{"Content-Type"="application/json"} -Body '{"buildNumber": "${env.BUILD_NUMBER}", "status": "failed"}'
-            """
+        } catch {
+            Write-Host "Deploy webhook unreachable — skipping (local stack likely not running)."
         }
-        always {
-            bat 'docker logout %ECR_REGISTRY%'
-        }
+        """
+    }
+    always {
+        bat 'docker logout %ECR_REGISTRY%'
+    }
     }
 }
