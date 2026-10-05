@@ -78,7 +78,7 @@ resource "aws_eks_node_group" "logflow" {
     aws_subnet.public_b.id
   ]
 
-  instance_types = ["t3.medium"]
+  instance_types  = ["t3.small"]
 
   scaling_config {
     desired_size = 2

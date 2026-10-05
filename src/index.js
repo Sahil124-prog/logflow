@@ -13,12 +13,24 @@ const exportRoutes = require("./routes/exportLogs");
 const metricsRouter = require("./routes/metrics");
 const { apiRequestDuration } = require("./metrics");
 
-
 const deployRoutes = require("./routes/deploys");
 const startDashboardConsumer = require("./consumers/dashboardConsumer");
 
 const app = express();
 const server = http.createServer(app);
+
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Content-Type,Authorization,cache-control,Cache-Control,Pragma,Expires",
+  );
+
+  if (req.method === "OPTIONS") return res.sendStatus(200);
+  next();
+});
+
 const io = new Server(server, {
   cors: { origin: "*" },
 });
@@ -68,8 +80,6 @@ mongoose
 io.on("connection", (socket) => {
   console.log("Dashboard connected:", socket.id);
 });
-
-
 
 startDashboardConsumer(io);
 

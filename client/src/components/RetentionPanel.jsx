@@ -1,7 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 
-const API = "http://localhost:8081";
+const API = "http://ab11cee89d1194ccd9e4935073030cc5-1450739907.us-east-1.elb.amazonaws.com";
 
 export default function RetentionPanel({ auth, logs }) {
   const [running, setRunning] = useState(false);

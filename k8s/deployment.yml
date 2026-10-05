@@ -21,6 +21,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: logflow-config
+            - secretRef:
+                name: logflow-secrets
           readinessProbe:
             httpGet:
               path: /health

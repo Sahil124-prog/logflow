@@ -14,7 +14,7 @@ import RetentionPanel from "../components/RetentionPanel";
 import DeployHistory from "../components/DeployHistory";
 import MetricsSummary from "../components/MetricsSummary";
 
-const API = "http://localhost:8081";
+const API = "http://ab11cee89d1194ccd9e4935073030cc5-1450739907.us-east-1.elb.amazonaws.com";
 
 /* ─── CSS injected once ─────────────────────────────────────────────────── */
 const css = `

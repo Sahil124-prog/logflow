@@ -17,7 +17,7 @@ spec:
         - name: log-ingestion-service
           image: 866972254535.dkr.ecr.us-east-1.amazonaws.com/logflow-log-ingestion-service:latest
           ports:
-            - containerPort: 5001
+            - containerPort: 5000
           envFrom:
             - configMapRef:
                 name: logflow-config
@@ -31,7 +31,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /health
-              port: 5001
+              port: 5000
             initialDelaySeconds: 10
             periodSeconds: 5
 ---
@@ -44,5 +44,5 @@ spec:
   selector:
     app: log-ingestion-service
   ports:
-    - port: 5001
-      targetPort: 5001
+    - port: 5000
+      targetPort: 5000
