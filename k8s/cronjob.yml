@@ -11,7 +11,7 @@ spec:
         spec:
           containers:
             - name: cleanup
-              image: logflow-api:latest
+              image: 866972254535.dkr.ecr.us-east-1.amazonaws.com/logflow-api:latest
               command: ["node", "src/cleanup.js"]
               envFrom:
                 - configMapRef:
