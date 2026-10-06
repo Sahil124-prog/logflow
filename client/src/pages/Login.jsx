@@ -3,7 +3,8 @@
 import { useState } from "react";
 import axios from "axios";
 
-const API = "http://ab11cee89d1194ccd9e4935073030cc5-1450739907.us-east-1.elb.amazonaws.com";
+const API = import.meta.env.VITE_API_URL || "";
+
 
 const injectStyles = () => {
   if (document.getElementById("logflow-login-styles")) return;
