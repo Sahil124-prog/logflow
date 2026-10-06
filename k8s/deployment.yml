@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: logflow-api
-          image: 866972254535.dkr.ecr.us-east-1.amazonaws.com/logflow-api:latest
+          image: 866972254535.dkr.ecr.us-east-1.amazonaws.com/logflow-api:17
           ports:
             - containerPort: 5000
           envFrom:
@@ -35,6 +35,160 @@ spec:
               port: 5000
             initialDelaySeconds: 30
             periodSeconds: 10
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-ingestion-service
+  namespace: default
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: log-ingestion-service
+  template:
+    metadata:
+      labels:
+        app: log-ingestion-service
+    spec:
+      containers:
+        - name: log-ingestion-service
+          image: 866972254535.dkr.ecr.us-east-1.amazonaws.com/logflow-log-ingestion-service:17
+          ports:
+            - containerPort: 5000
+          envFrom:
+            - configMapRef:
+                name: logflow-config
+            - secretRef:
+                name: logflow-secrets
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alert-service
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alert-service
+  template:
+    metadata:
+      labels:
+        app: alert-service
+    spec:
+      containers:
+        - name: alert-service
+          image: 866972254535.dkr.ecr.us-east-1.amazonaws.com/logflow-alert-service:17
+          envFrom:
+            - configMapRef:
+                name: logflow-config
+            - secretRef:
+                name: logflow-secrets
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      containers:
+        - name: notification-service
+          image: 866972254535.dkr.ecr.us-east-1.amazonaws.com/logflow-notification-service:17
+          envFrom:
+            - configMapRef:
+                name: logflow-config
+            - secretRef:
+                name: logflow-secrets
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client
+  namespace: default
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: client
+  template:
+    metadata:
+      labels:
+        app: client
+    spec:
+      containers:
+        - name: client
+          image: 866972254535.dkr.ecr.us-east-1.amazonaws.com/logflow-client:17
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simulator
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: simulator
+  template:
+    metadata:
+      labels:
+        app: simulator
+    spec:
+      containers:
+        - name: simulator
+          image: 866972254535.dkr.ecr.us-east-1.amazonaws.com/logflow-simulator:17
+          envFrom:
+            - configMapRef:
+                name: logflow-config
+            - secretRef:
+                name: logflow-secrets
           resources:
             requests:
               memory: "128Mi"
