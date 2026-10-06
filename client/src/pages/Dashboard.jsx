@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { io } from "socket.io-client";
@@ -14,7 +13,7 @@ import RetentionPanel from "../components/RetentionPanel";
 import DeployHistory from "../components/DeployHistory";
 import MetricsSummary from "../components/MetricsSummary";
 
-const API = "http://ab11cee89d1194ccd9e4935073030cc5-1450739907.us-east-1.elb.amazonaws.com";
+const API = import.meta.env.VITE_API_URL || "";
 
 /* ─── CSS injected once ─────────────────────────────────────────────────── */
 const css = `
@@ -199,7 +198,6 @@ function injectStyles() {
   document.head.appendChild(el);
 }
 
-
 function Topbar({
   auth,
   connected,
@@ -312,7 +310,6 @@ function Topbar({
           </>
         )}
 
-       
         <div
           style={{
             display: "flex",
@@ -355,7 +352,6 @@ function Topbar({
           </span>
         </div>
 
-        
         <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
           <div
             className="lf-dot"
@@ -380,7 +376,6 @@ function Topbar({
     </div>
   );
 }
-
 
 function AlertBanner({ count }) {
   if (!count) return null;
@@ -411,7 +406,6 @@ function AlertBanner({ count }) {
     </div>
   );
 }
-
 
 function ViewerBanner() {
   return (
@@ -447,7 +441,6 @@ function ViewerBanner() {
   );
 }
 
-
 function SectionLabel({ children }) {
   return (
     <div
@@ -473,7 +466,6 @@ function SectionLabel({ children }) {
     </div>
   );
 }
-
 
 function SendLogCard({ sendForm, setSendForm, onSend, sending }) {
   return (
@@ -579,7 +571,6 @@ function SendLogCard({ sendForm, setSendForm, onSend, sending }) {
   );
 }
 
-
 const LEVEL_STYLES = {
   ALL: { bg: "var(--surface2)", color: "var(--text2)" },
   INFO: { bg: "var(--info-bg)", color: "var(--info)" },
@@ -664,7 +655,6 @@ function LogFilterBar({
   );
 }
 
-
 function LogModal({ log, onClose }) {
   if (!log) return null;
   return (
@@ -744,7 +734,6 @@ function LogModal({ log, onClose }) {
     </div>
   );
 }
-
 
 export default function Dashboard({ auth, onLogout }) {
   injectStyles();
@@ -914,7 +903,6 @@ export default function Dashboard({ auth, onLogout }) {
 
       {!isAdmin && <ViewerBanner />}
 
-     
       <div
         style={{
           padding: "1.5rem",
@@ -925,11 +913,9 @@ export default function Dashboard({ auth, onLogout }) {
           margin: "0 auto",
         }}
       >
-        
         <SectionLabel>Overview</SectionLabel>
         <StatCards logs={logs} alerts={alerts} />
 
-      
         <SectionLabel>Infrastructure</SectionLabel>
         <div
           style={{
@@ -942,23 +928,18 @@ export default function Dashboard({ auth, onLogout }) {
           <SystemHealth health={health} connected={connected} />
         </div>
 
-        
         <SectionLabel>Prometheus metrics</SectionLabel>
         <MetricsSummary />
 
-       
         <SectionLabel>Analytics</SectionLabel>
         <Charts logs={logs} />
 
-      
         <SectionLabel>Alerts</SectionLabel>
         <AlertPanel alerts={alerts} onResolve={isAdmin ? resolveAlert : null} />
 
-        
         <SectionLabel>Deployments</SectionLabel>
         <DeployHistory auth={auth} />
 
-      
         {isAdmin && (
           <>
             <SectionLabel>Admin controls</SectionLabel>
@@ -973,7 +954,6 @@ export default function Dashboard({ auth, onLogout }) {
           </>
         )}
 
-        
         <SectionLabel>Live logs</SectionLabel>
         <div className="lf-card">
           <LogFilterBar

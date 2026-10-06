@@ -9,6 +9,6 @@ data:
   NODE_ENV: "production"
   MONGO_URI: "mongodb://mongodb-service:27017/logflow"
   RABBITMQ_URL: "amqp://rabbitmq-service:5672"
-  LOG_INGESTION_URL: "http://log-ingestion-service:5001"
+  LOG_INGESTION_URL: "http://log-ingestion-service:5000"
 
   

@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Log = require("../models/Log");
 const auth = require("../middleware/auth");
+const axios = require("axios");
 
 router.get("/", auth, async (req, res) => {
   try {
@@ -15,5 +16,18 @@ router.get("/", auth, async (req, res) => {
 
 // POST / and DELETE /cleanup moved to log-ingestion-service as of Phase 0.3
 // (CQRS-lite split: this service is now read-only against the Log collection)
+
+router.post("/", auth, async (req, res) => {
+  try {
+    const response = await axios.post(
+      process.env.LOG_INGESTION_URL + "/api/logs",
+      req.body,
+      { headers: { Authorization: req.headers.authorization } },
+    );
+    res.status(response.status).json(response.data);
+  } catch (err) {
+    res.status(err.response?.status || 500).json({ error: err.message });
+  }
+});
 
 module.exports = router;
