@@ -19,12 +19,11 @@ router.get("/", auth, async (req, res) => {
 
 router.post("/", auth, async (req, res) => {
   try {
-    const response = await axios.post(
-      (process.env.LOG_INGESTION_URL || "http://log-ingestion-service:5001") +
-        "/",
-      req.body,
-      { headers: { Authorization: req.headers.authorization } },
-    );
+    const ingestionUrl =
+      process.env.LOG_INGESTION_URL || "http://log-ingestion-service:5001";
+    const response = await axios.post(ingestionUrl + "/", req.body, {
+      headers: { Authorization: req.headers.authorization },
+    });
     res.status(response.status).json(response.data);
   } catch (err) {
     res.status(err.response?.status || 500).json({ error: err.message });
