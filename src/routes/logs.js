@@ -20,7 +20,8 @@ router.get("/", auth, async (req, res) => {
 router.post("/", auth, async (req, res) => {
   try {
     const response = await axios.post(
-      process.env.LOG_INGESTION_URL + "/api/logs",
+      (process.env.LOG_INGESTION_URL || "http://log-ingestion-service:5001") +
+        "/",
       req.body,
       { headers: { Authorization: req.headers.authorization } },
     );
