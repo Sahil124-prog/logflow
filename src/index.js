@@ -18,6 +18,33 @@ const startDashboardConsumer = require("./consumers/dashboardConsumer");
 
 const app = express();
 const server = http.createServer(app);
+const { S3Client, CreateBucketCommand } = require("@aws-sdk/client-s3");
+
+async function ensureS3Bucket() {
+  const s3 = new S3Client({
+    region: process.env.AWS_REGION,
+    endpoint: process.env.AWS_ENDPOINT,
+    forcePathStyle: true,
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    },
+  });
+  try {
+    await s3.send(new CreateBucketCommand({ Bucket: process.env.S3_BUCKET }));
+    console.log(`S3 bucket '${process.env.S3_BUCKET}' created`);
+  } catch (err) {
+    if (
+      err.name === "BucketAlreadyOwnedByYou" ||
+      err.name === "BucketAlreadyExists"
+    ) {
+      console.log(`S3 bucket '${process.env.S3_BUCKET}' already exists`);
+    } else {
+      console.error("S3 bucket creation error:", err.message);
+    }
+  }
+}
+
 
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
@@ -74,7 +101,10 @@ app.use("/api/deploys", deployRoutes);
 
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
+  .then(() => {
+    console.log("MongoDB connected");
+    ensureS3Bucket();
+  })
   .catch((err) => console.error("MongoDB error:", err));
 
 io.on("connection", (socket) => {
