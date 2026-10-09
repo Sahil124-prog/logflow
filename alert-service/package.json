@@ -6,6 +6,7 @@
     "start": "node index.js"
   },
   "dependencies": {
+    "@aws-sdk/client-lambda": "^3.0.0",
     "amqplib": "^0.10.3",
     "dotenv": "^16.0.0",
     "mongoose": "^7.0.0"
