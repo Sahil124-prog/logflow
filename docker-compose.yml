@@ -112,15 +112,32 @@ services:
     ports:
       - "4566:4566"
     environment:
-      - SERVICES=s3,iam
+      - SERVICES=s3,iam,lambda
       - DEFAULT_REGION=us-east-1
       - AWS_DEFAULT_REGION=us-east-1
     networks:
       - logflow-net
     volumes:
       - localstack-data:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - api
+  
+  localstack-init:
+    image: amazon/aws-cli:latest
+    container_name: logflow-localstack-init
+    depends_on:
+      - localstack
+    environment:
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=us-east-1
+    volumes:
+      - ./lambda:/lambda
+      - ./scripts:/scripts
+    entrypoint: ["/bin/sh", "/scripts/localstack-init.sh"]
+    networks:
+      - logflow-net
 
   client:
     build:

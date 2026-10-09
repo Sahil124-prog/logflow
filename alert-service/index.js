@@ -22,8 +22,17 @@ const RETRY_DELAY_MS = 10000;
 const RETRY_QUEUE = "alerts.retry.queue";
 const DLQ = "alerts.dlq";
 
+// const lambdaClient = new LambdaClient({
+//   region: "us-east-1",
+//   credentials: {
+//     accessKeyId: process.env.LAMBDA_AWS_ACCESS_KEY_ID,
+//     secretAccessKey: process.env.LAMBDA_AWS_SECRET_ACCESS_KEY,
+//   },
+// });
+
 const lambdaClient = new LambdaClient({
   region: "us-east-1",
+  endpoint: process.env.LAMBDA_ENDPOINT,
   credentials: {
     accessKeyId: process.env.LAMBDA_AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.LAMBDA_AWS_SECRET_ACCESS_KEY,
