@@ -79,6 +79,12 @@
 pipeline {
     agent any
 
+    // CHANGE 1: checkbox to push to ECR (off by default)
+    parameters {
+        booleanParam(name: 'PUSH_TO_ECR', defaultValue: false,
+                     description: 'Tick to push images to AWS ECR (needs an active AWS key)')
+    }
+
     environment {
         AWS_ACCOUNT_ID = '866972254535'
         AWS_REGION     = 'us-east-1'
@@ -100,6 +106,8 @@ pipeline {
         }
 
         stage('ECR Login') {
+            // CHANGE 2: only runs when PUSH_TO_ECR is ticked
+            when { expression { params.PUSH_TO_ECR } }
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: 'aws-ecr-credentials',
@@ -128,8 +136,13 @@ pipeline {
                     for (svc in services) {
                     bat """
                         docker build -f ${svc.context}\\${svc.dockerfile} -t %ECR_REGISTRY%/${svc.name}:%BUILD_NUMBER% ${svc.context}
-                        docker push %ECR_REGISTRY%/${svc.name}:%BUILD_NUMBER%
                     """
+                    // CHANGE 3: push only when PUSH_TO_ECR is ticked
+                    if (params.PUSH_TO_ECR) {
+                        bat """
+                            docker push %ECR_REGISTRY%/${svc.name}:%BUILD_NUMBER%
+                        """
+                    }
                     }
                 }
             }
