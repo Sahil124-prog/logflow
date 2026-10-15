@@ -148,7 +148,6 @@ export default function Login({ onLogin }) {
   const [form, setForm] = useState({
     username: "",
     password: "",
-    role: "viewer",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -206,7 +205,6 @@ export default function Login({ onLogin }) {
         fontFamily: "var(--sans)",
       }}
     >
-      
       <div
         style={{
           position: "fixed",
@@ -233,7 +231,6 @@ export default function Login({ onLogin }) {
             "0 4px 24px rgba(28,25,23,0.07), 0 1px 4px rgba(28,25,23,0.04)",
         }}
       >
-       
         <div
           style={{
             display: "flex",
@@ -299,7 +296,6 @@ export default function Login({ onLogin }) {
           />
         </div>
 
-        
         <div style={{ marginBottom: "1.5rem" }}>
           <h1
             style={{
@@ -320,11 +316,10 @@ export default function Login({ onLogin }) {
           >
             {tab === "login"
               ? "Sign in to your LogFlow workspace"
-              : "Register to access the dashboard"}
+              : "New accounts get read-only (viewer) access"}
           </p>
         </div>
 
-       
         <div
           style={{
             display: "flex",
@@ -394,9 +389,7 @@ export default function Login({ onLogin }) {
           </div>
         )}
 
-       
         <form onSubmit={submit}>
-          
           <div style={{ marginBottom: "1rem" }}>
             <label
               style={{
@@ -414,14 +407,13 @@ export default function Login({ onLogin }) {
               name="username"
               value={form.username}
               onChange={update}
-              placeholder="admin"
+              placeholder="username"
               autoComplete="username"
               autoFocus
             />
           </div>
 
-         
-          <div style={{ marginBottom: tab === "signup" ? "1rem" : "1.25rem" }}>
+          <div style={{ marginBottom: "1.25rem" }}>
             <label
               style={{
                 display: "block",
@@ -443,32 +435,6 @@ export default function Login({ onLogin }) {
               autoComplete="current-password"
             />
           </div>
-
-          
-          {tab === "signup" && (
-            <div style={{ marginBottom: "1.25rem" }}>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: "12px",
-                  fontWeight: "500",
-                  color: "var(--text2)",
-                  marginBottom: "6px",
-                }}
-              >
-                Role
-              </label>
-              <select
-                className="lf-login-select"
-                name="role"
-                value={form.role}
-                onChange={update}
-              >
-                <option value="viewer">Viewer — read logs only</option>
-                <option value="admin">Admin — full access</option>
-              </select>
-            </div>
-          )}
 
           <button className="lf-submit-btn" type="submit" disabled={loading}>
             {loading

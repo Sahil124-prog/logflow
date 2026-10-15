@@ -1,10 +1,9 @@
-
-
 const express = require("express");
 const router = express.Router();
 const Alert = require("../models/Alert");
 const Log = require("../models/Log");
 const auth = require("../middleware/auth");
+const { requireAdmin } = auth;
 const { activeAlerts } = require("../metrics");
 
 router.get("/", auth, async (req, res) => {
@@ -17,8 +16,7 @@ router.get("/", auth, async (req, res) => {
   }
 });
 
-
-router.patch("/:id/resolve", auth, async (req, res) => {
+router.patch("/:id/resolve", auth, requireAdmin, async (req, res) => {
   try {
     const alert = await Alert.findByIdAndUpdate(
       req.params.id,
@@ -35,8 +33,7 @@ router.patch("/:id/resolve", auth, async (req, res) => {
   }
 });
 
-
-router.post("/trigger-check", auth, async (req, res) => {
+router.post("/trigger-check", auth, requireAdmin, async (req, res) => {
   try {
     const WINDOW_MINUTES = 5;
     const ERROR_THRESHOLD = 2;
@@ -57,7 +54,6 @@ router.post("/trigger-check", auth, async (req, res) => {
         resolved: true,
       }).sort({ updatedAt: -1 });
 
-      
       let timeThreshold = windowStart;
       if (
         recentlyResolvedAlert &&
