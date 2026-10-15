@@ -3,6 +3,9 @@ const router = express.Router();
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const Log = require("../models/Log");
 const auth = require("../middleware/auth");
+const { requireAdmin } = auth;
+
+
 
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
@@ -15,7 +18,7 @@ const s3 = new S3Client({
 });
 
 
-router.post("/", auth, async (req, res) => {
+router.post("/", auth, requireAdmin, async (req, res) => {
   const logs = await Log.find().sort({ timestamp: -1 }).limit(1000);
 
   const fileName = `logs-export-${Date.now()}.json`;

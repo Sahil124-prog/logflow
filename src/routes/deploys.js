@@ -3,6 +3,13 @@ const router = express.Router();
 const Deploy = require("../models/Deploy");
 const auth = require("../middleware/auth");
 
+const requireDeployKey = (req, res, next) => {
+  const key = process.env.DEPLOY_KEY;
+  if (!key || req.headers["x-deploy-key"] !== key) {
+    return res.status(401).json({ error: "Invalid deploy key" });
+  }
+  next();
+};
 
 router.get("/", auth, async (req, res) => {
   try {
@@ -14,15 +21,15 @@ router.get("/", auth, async (req, res) => {
   }
 });
 
-
-router.post("/", async (req, res) => {
+router.post("/", requireDeployKey, async (req, res) => {
   try {
     const { buildNumber, imageTag, status } = req.body;
     const deploy = await Deploy.create({
       buildNumber,
-      imageTag,
+      imageTag: imageTag || String(buildNumber),
       status: status || "success",
     });
+
     res.json(deploy);
   } catch (err) {
     res.status(500).json({ error: err.message });

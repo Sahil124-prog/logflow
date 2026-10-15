@@ -156,26 +156,32 @@ pipeline {
     }
 
     post {
-    success {
+        success {
         echo 'LogFlow build & push succeeded!'
-        powershell """
-        try {
-            Invoke-RestMethod -Uri "http://localhost:8081/api/deploys" -Method Post -Headers @{"Content-Type"="application/json"} -Body '{"buildNumber": "${env.BUILD_NUMBER}", "status": "success"}'
-        } catch {
-            Write-Host "Deploy webhook unreachable — skipping (local stack likely not running)."
+        withCredentials([string(credentialsId: 'logflow-deploy-key', variable: 'DEPLOY_KEY')]) {
+            powershell """
+            try {
+                Invoke-RestMethod -Uri "http://localhost:8081/api/deploys" -Method Post -Headers @{"Content-Type"="application/json"; "x-deploy-key"=\$env:DEPLOY_KEY} -Body '{"buildNumber": "${env.BUILD_NUMBER}", "status": "success"}'
+            } catch {
+                Write-Host "Deploy webhook unreachable — skipping (local stack likely not running)."
+            }
+            """
         }
-        """
     }
     failure {
         echo 'Pipeline failed — LogFlow build/push did NOT complete.'
-        powershell """
-        try {
-            Invoke-RestMethod -Uri "http://localhost:8081/api/deploys" -Method Post -Headers @{"Content-Type"="application/json"} -Body '{"buildNumber": "${env.BUILD_NUMBER}", "status": "failed"}'
-        } catch {
-            Write-Host "Deploy webhook unreachable — skipping (local stack likely not running)."
+        withCredentials([string(credentialsId: 'logflow-deploy-key', variable: 'DEPLOY_KEY')]) {
+            powershell """
+            try {
+                Invoke-RestMethod -Uri "http://localhost:8081/api/deploys" -Method Post -Headers @{"Content-Type"="application/json"; "x-deploy-key"=\$env:DEPLOY_KEY} -Body '{"buildNumber": "${env.BUILD_NUMBER}", "status": "failed"}'
+            } catch {
+                Write-Host "Deploy webhook unreachable — skipping (local stack likely not running)."
+            }
+            """
         }
-        """
     }
+    
+    
     always {
         bat 'docker logout %ECR_REGISTRY%'
     }

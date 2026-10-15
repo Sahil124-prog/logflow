@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 
 const Log = require("./models/Log");
 const auth = require("./middleware/auth");
+const { requireAdmin } = auth;
 const { connectPublisher, publishLogCreated } = require("./publisher");
 
 const app = express();
@@ -38,7 +39,7 @@ app.post("/", async (req, res) => {
 });
 
 // Retention cleanup — still auth-protected, exactly as before
-app.delete("/cleanup", auth, async (req, res) => {
+app.delete("/cleanup", auth, requireAdmin, async (req, res) => {
   try {
     const retentionDays = parseInt(process.env.LOG_RETENTION_DAYS || "30");
     const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
