@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 
 const Log = require("./models/Log");
 const auth = require("./middleware/auth");
-const { requireAdmin } = auth;
+const { requireAdmin, authOrApiKey } = auth;
 const { connectPublisher, publishLogCreated } = require("./publisher");
 
 const app = express();
@@ -19,8 +19,8 @@ app.get("/health", (req, res) => {
   });
 });
 
-// Write path — no auth, same as before (simulator/services post here directly)
-app.post("/", async (req, res) => {
+// Write path — JWT (dashboard) or x-api-key (services).
+app.post("/", authOrApiKey, async (req, res) => {
   try {
     const { service, level, message, timestamp } = req.body;
     const log = await Log.create({

@@ -826,10 +826,11 @@ export default function Dashboard({ auth, onLogout }) {
     if (!sendForm.message.trim()) return;
     setSending(true);
     try {
-      await axios.post(API + "/api/logs", {
-        ...sendForm,
-        timestamp: new Date().toISOString(),
-      });
+      await axios.post(
+        API + "/api/logs",
+        { ...sendForm, timestamp: new Date().toISOString() },
+        { headers },
+      );
     } catch {
     } finally {
       setSending(false);

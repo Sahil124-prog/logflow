@@ -154,6 +154,7 @@ services:
     container_name: logflow-simulator
     environment:
       - LOG_INGESTION_URL=http://log-ingestion-service:5001
+      - INGEST_API_KEY=${INGEST_API_KEY}
     depends_on:
       - log-ingestion-service
     networks:

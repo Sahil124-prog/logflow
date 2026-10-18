@@ -24,7 +24,16 @@ const requireAdmin = (req, res, next) => {
   next();
 };
 
+const authOrApiKey = (req, res, next) => {
+  const apiKey = process.env.INGEST_API_KEY;
+  if (apiKey && req.headers["x-api-key"] === apiKey) return next();
+  return auth(req, res, next);
+};
+
+
 module.exports = auth;
 module.exports.requireAdmin = requireAdmin;
+module.exports.authOrApiKey = authOrApiKey;
+
 
 

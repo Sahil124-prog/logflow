@@ -46,10 +46,15 @@ async function sendLog(service, level, message) {
     await axios.post(
       `${API}/`,
       { service, level, message, timestamp: new Date().toISOString() },
-      { timeout: 3000 },
+      { timeout: 3000, headers: { "x-api-key": process.env.INGEST_API_KEY } },
     );
-  } catch (e) {
+
     // silently fail — log-ingestion-service might not be ready yet during startup
+  } catch (e) {
+    console.error(
+      `[simulator] send failed for ${service}:`,
+      e.response?.status || e.message,
+    );
   }
 }
 
