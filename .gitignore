@@ -15,3 +15,5 @@ terraform/.terraform/
 terraform/terraform.tfstate
 terraform/terraform.tfstate.backup
 terraform/.terraform.lock.hcl
+ecr-token.txt
+*.token
