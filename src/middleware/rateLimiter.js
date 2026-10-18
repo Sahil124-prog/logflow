@@ -14,32 +14,31 @@ client.on("error", (err) => {
   console.warn("Redis error:", err.message);
 });
 
-const rateLimiter = async (req, res, next) => {
-  // If Redis isn't ready, skip rate limiting entirely
-  if (!client.isReady) {
-    return next();
-  }
+// Factory: rateLimit({ name, limit, windowSec, keyFn }) returns an Express middleware.
+// Fixed window counter in Redis; fails open if Redis is down (availability over strictness).
+const rateLimit = ({ name, limit, windowSec, keyFn }) => async (req, res, next) => {
+  if (!client.isReady) return next();
 
-  const service = req.body.service || "unknown";
-  const key = `rate:${service}:${Math.floor(Date.now() / 60000)}`;
+  const window = Math.floor(Date.now() / (windowSec * 1000));
+  const key = `rate:${name}:${keyFn(req)}:${window}`;
 
   try {
-    const count = await client.incr(key);
+    // MULTI makes INCR + EXPIRE atomic: the key can never be left without a TTL
+    const [count] = await client.multi().incr(key).expire(key, windowSec).exec();
 
-    if (count === 1) {
-      await client.expire(key, 60);
+    res.set("RateLimit-Limit", String(limit));
+    res.set("RateLimit-Remaining", String(Math.max(0, limit - count)));
+
+    if (count > limit) {
+      return res.status(429).json({ error: "Too many requests, please try again later" });
     }
-
-    if (count > 100) {
-      return res.status(429).json({ error: "Rate limit exceeded" });
-    }
-
     next();
   } catch (err) {
-    // If Redis fails mid-request, skip rate limiting
     console.warn("Rate limiter error — skipping:", err.message);
     next();
   }
 };
 
-module.exports = rateLimiter;
+module.exports = rateLimit;
+
+

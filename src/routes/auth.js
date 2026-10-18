@@ -3,6 +3,16 @@ const router = express.Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const rateLimit = require("../middleware/rateLimiter");
+
+// 5 login attempts per minute per client IP. Nginx sets X-Real-IP; the API port isn't published, so it can't be spoofed from outside
+const loginLimiter = rateLimit({
+  name: "login",
+  limit: 5,
+  windowSec: 60,
+  keyFn: (req) => req.headers["x-real-ip"] || req.ip,
+});
+
 
 router.post("/register", async (req, res) => {
   try {
@@ -31,7 +41,7 @@ router.post("/register", async (req, res) => {
   }
 });
 
-router.post("/login", async (req, res) => {
+router.post("/login", loginLimiter, async (req, res) => {
   try {
     const { username, password } = req.body;
     const user = await User.findOne({ username });
