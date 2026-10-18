@@ -125,7 +125,7 @@ pipeline {
             steps {
                 script {
                     def services = [
-                        [name: 'logflow-api',                   context: '.',                          dockerfile: 'dockerfile'],
+                        [name: 'logflow-api',                   context: '.',                          dockerfile: 'Dockerfile'],
                         [name: 'logflow-log-ingestion-service', context: '.\\log-ingestion-service',   dockerfile: 'Dockerfile'],
                         [name: 'logflow-alert-service',         context: '.\\alert-service',           dockerfile: 'Dockerfile'],
                         [name: 'logflow-notification-service',  context: '.\\notification-service',    dockerfile: 'Dockerfile'],
