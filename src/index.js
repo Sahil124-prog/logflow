@@ -17,7 +17,14 @@ const deployRoutes = require("./routes/deploys");
 const startDashboardConsumer = require("./consumers/dashboardConsumer");
 
 const app = express();
+
 const server = http.createServer(app);
+const allowedOrigins = (
+  process.env.CORS_ORIGINS || "http://localhost:8081,http://localhost:5173"
+)
+  .split(",")
+  .map((o) => o.trim());
+
 const { S3Client, CreateBucketCommand } = require("@aws-sdk/client-s3");
 
 async function ensureS3Bucket() {
@@ -45,10 +52,16 @@ async function ensureS3Bucket() {
   }
 }
 
-
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.header("Access-Control-Allow-Origin", origin);
+    res.header("Vary", "Origin");
+  }
+  res.header(
+    "Access-Control-Allow-Methods",
+    "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+  );
   res.header(
     "Access-Control-Allow-Headers",
     "Content-Type,Authorization,cache-control,Cache-Control,Pragma,Expires",
@@ -59,7 +72,7 @@ app.use((req, res, next) => {
 });
 
 const io = new Server(server, {
-  cors: { origin: "*" },
+  cors: { origin: allowedOrigins },
 });
 
 app.use(express.json());
@@ -90,14 +103,12 @@ app.get("/health", (req, res) => {
   });
 });
 
-
 app.get("/ready", (req, res) => {
   const mongoOk = mongoose.connection.readyState === 1;
   res
     .status(mongoOk ? 200 : 503)
     .json({ ready: mongoOk, mongo: mongoOk ? "connected" : "disconnected" });
 });
-
 
 app.use("/api/auth", authRoutes);
 app.use("/api/logs", logRoutes);
