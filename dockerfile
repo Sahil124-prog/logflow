@@ -4,7 +4,7 @@ FROM node:18-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+RUN npm ci --omit=dev
 # .dockerignore excludes node_modules, .env, .git, *.log
 # so secrets and unnecessary files never enter the image
 COPY . .
