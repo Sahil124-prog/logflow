@@ -101,8 +101,30 @@ pipeline {
             steps { bat 'npm ci' }
         }
 
-        stage('Test') {
-            steps { bat 'npm test' }
+                stage('Test') {
+            environment {
+                // Port 27019, not 27018, so it never clashes with your local test Mongo
+                MONGO_TEST_URI = 'mongodb://127.0.0.1:27019/logflow-test'
+            }
+            steps {
+                bat 'docker run -d --rm --name logflow-ci-mongo-%BUILD_NUMBER% -p 27019:27017 mongo:6'
+                // Wait up to 30 s until Mongo answers a ping
+                powershell '''
+                    for ($i = 0; $i -lt 30; $i++) {
+                        docker exec "logflow-ci-mongo-$env:BUILD_NUMBER" mongosh --quiet --eval "db.runCommand({ping:1}).ok" 2>$null
+                        if ($LASTEXITCODE -eq 0) { Write-Host "Mongo is up"; exit 0 }
+                        Start-Sleep -Seconds 1
+                    }
+                    Write-Error "Mongo did not start in 30s"; exit 1
+                '''
+                bat 'npm test'
+            }
+            post {
+                always {
+                    // Runs even if the tests fail, so no leftover container
+                    bat 'docker rm -f logflow-ci-mongo-%BUILD_NUMBER% || exit /b 0'
+                }
+            }
         }
 
         stage('ECR Login') {
