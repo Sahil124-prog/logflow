@@ -123,19 +123,26 @@ app.use("/api/export", exportRoutes);
 app.use("/metrics", metricsRouter);
 app.use("/api/deploys", deployRoutes);
 
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("MongoDB connected");
-    ensureS3Bucket();
-  })
-  .catch((err) => console.error("MongoDB error:", err));
 
 io.on("connection", (socket) => {
   console.log("Dashboard connected:", socket.id);
 });
 
-startDashboardConsumer(io);
+// Only connect to Mongo/RabbitMQ and listen when run directly (node src/index.js),
+// not when a test file require()s this module.
+if (require.main === module) {
+  mongoose
+    .connect(process.env.MONGO_URI)
+    .then(() => {
+      console.log("MongoDB connected");
+      ensureS3Bucket();
+    })
+    .catch((err) => console.error("MongoDB error:", err));
 
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`LogFlow API running on port ${PORT}`));
+  startDashboardConsumer(io);
+
+  const PORT = process.env.PORT || 5000;
+  server.listen(PORT, () => console.log(`LogFlow API running on port ${PORT}`));
+}
+
+module.exports = { app, server };
