@@ -12,6 +12,17 @@ const {
   isPublisherReady,
 } = require("./publisher");
 
+const rateLimit = require("./middleware/rateLimiter");
+
+// JWT users: 20/min per user. API-key services: 100/min per service name.
+const ingestLimiter = rateLimit({
+  name: "ingest",
+  windowSec: 60,
+  limit: (req) => (req.user ? 20 : 100),
+  keyFn: (req) =>
+    req.user ? `user:${req.user.id}` : `svc:${req.body?.service || "unknown"}`,
+});
+
 const app = express();
 app.use(express.json());
 
@@ -34,7 +45,7 @@ app.get("/ready", (req, res) => {
 
 
 // Write path — JWT (dashboard) or x-api-key (services).
-app.post("/", authOrApiKey, async (req, res) => {
+app.post("/", authOrApiKey, ingestLimiter, async (req, res) => {
   try {
     const { service, level, message, timestamp } = req.body;
     const log = await Log.create({
