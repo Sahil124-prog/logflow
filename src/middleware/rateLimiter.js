@@ -40,5 +40,7 @@ const rateLimit = ({ name, limit, windowSec, keyFn }) => async (req, res, next) 
 };
 
 module.exports = rateLimit;
+module.exports.isRedisReady = () => client.isReady;
+
 
 

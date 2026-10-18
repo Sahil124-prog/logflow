@@ -17,7 +17,14 @@ export default function SystemHealth({ health, connected }) {
         ? `up ${Math.floor((health.uptime || 0) / 60)}m`
         : "unreachable",
     },
-    { label: "Redis", ok: true, value: "rate limiter active" },
+    {
+      label: "Redis",
+      ok: health?.redis === "connected",
+      value:
+        health?.redis === "connected"
+          ? "rate limiter active"
+          : "down: limits off (fail-open)",
+    },
   ];
 
   return (

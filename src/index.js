@@ -12,6 +12,9 @@ const statsRoutes = require("./routes/stats");
 const exportRoutes = require("./routes/exportLogs");
 const metricsRouter = require("./routes/metrics");
 const { apiRequestDuration } = require("./metrics");
+const { isRedisReady } = require("./middleware/rateLimiter");
+
+
 
 const deployRoutes = require("./routes/deploys");
 const startDashboardConsumer = require("./consumers/dashboardConsumer");
@@ -98,6 +101,7 @@ app.get("/health", (req, res) => {
   res.json({
     status: "ok",
     mongo: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+    redis: isRedisReady() ? "connected" : "disconnected",
     uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
   });

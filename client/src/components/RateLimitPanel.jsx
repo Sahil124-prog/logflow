@@ -13,7 +13,7 @@ export default function RateLimitPanel({ auth }) {
     const newResults = [];
 
     
-    for (let i = 1; i <= 5; i++) {
+    for (let i = 1; i <= 25; i++) {
       try {
         await axios.post(
           API + "/api/logs",
@@ -80,8 +80,8 @@ export default function RateLimitPanel({ auth }) {
               lineHeight: "1.5",
             }}
           >
-            100 requests per minute per service. Redis tracks a sliding window
-            key{" "}
+            Dashboard users: 20 logs/min per user. Services (API key): 100/min
+            per service. Redis tracks a fixed-window. key{" "}
             <span
               style={{
                 fontFamily: "var(--mono)",
@@ -91,7 +91,7 @@ export default function RateLimitPanel({ auth }) {
                 fontSize: "10px",
               }}
             >
-              rate:auth-service:&lt;minute&gt;
+              rate:ingest:user:&lt;id&gt;:&lt;minute&gt;
             </span>
             . Exceeding limit returns HTTP 429.
           </div>
