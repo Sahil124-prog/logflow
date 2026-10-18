@@ -5,7 +5,12 @@ const mongoose = require("mongoose");
 const Log = require("./models/Log");
 const auth = require("./middleware/auth");
 const { requireAdmin, authOrApiKey } = auth;
-const { connectPublisher, publishLogCreated } = require("./publisher");
+
+const {
+  connectPublisher,
+  publishLogCreated,
+  isPublisherReady,
+} = require("./publisher");
 
 const app = express();
 app.use(express.json());
@@ -18,6 +23,15 @@ app.get("/health", (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+app.get("/ready", (req, res) => {
+  const mongoOk = mongoose.connection.readyState === 1;
+  const rabbitOk = isPublisherReady();
+  res
+    .status(mongoOk && rabbitOk ? 200 : 503)
+    .json({ ready: mongoOk && rabbitOk, mongo: mongoOk, rabbitmq: rabbitOk });
+});
+
 
 // Write path — JWT (dashboard) or x-api-key (services).
 app.post("/", authOrApiKey, async (req, res) => {

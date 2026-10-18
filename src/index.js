@@ -90,6 +90,15 @@ app.get("/health", (req, res) => {
   });
 });
 
+
+app.get("/ready", (req, res) => {
+  const mongoOk = mongoose.connection.readyState === 1;
+  res
+    .status(mongoOk ? 200 : 503)
+    .json({ ready: mongoOk, mongo: mongoOk ? "connected" : "disconnected" });
+});
+
+
 app.use("/api/auth", authRoutes);
 app.use("/api/logs", logRoutes);
 app.use("/api/services", serviceRoutes);

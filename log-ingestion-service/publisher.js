@@ -76,4 +76,5 @@ function publishLogCreated(log) {
   }
 }
 
-module.exports = { connectPublisher, publishLogCreated };
+const isPublisherReady = () => channel !== null;
+module.exports = { connectPublisher, publishLogCreated, isPublisherReady };

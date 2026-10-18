@@ -82,7 +82,7 @@ services:
       - logflow-net
 
   nginx:
-    image: nginx:alpine
+    image: nginx:1.29-alpine
     container_name: logflow-nginx
     restart: unless-stopped
     ports:
