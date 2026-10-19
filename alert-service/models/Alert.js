@@ -9,4 +9,8 @@ const alertSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+
+// At most ONE open (resolved:false) alert per service. Resolved alerts are unlimited.
+alertSchema.index({ service: 1 }, { unique: true, partialFilterExpression: { resolved: false } });
+
 module.exports = mongoose.model("Alert", alertSchema);

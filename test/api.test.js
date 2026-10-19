@@ -1,4 +1,6 @@
 process.env.JWT_SECRET = "test-secret";
+process.env.REDIS_URL = process.env.REDIS_TEST_URL || "redis://127.0.0.1:6380";
+
 
 const request = require("supertest");
 const mongoose = require("mongoose");
