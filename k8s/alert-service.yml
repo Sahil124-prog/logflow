@@ -15,10 +15,12 @@ spec:
     spec:
       containers:
         - name: alert-service
-          image: 866972254535.dkr.ecr.us-east-1.amazonaws.com/logflow-alert-service:latest
+          image: 866972254535.dkr.ecr.us-east-1.amazonaws.com/logflow-alert-service:29
           envFrom:
             - configMapRef:
                 name: logflow-config
+            - secretRef:
+                name: logflow-secrets   # LAMBDA_* keys
           resources:
             requests:
               cpu: "100m"

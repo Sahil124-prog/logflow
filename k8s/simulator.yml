@@ -15,10 +15,12 @@ spec:
     spec:
       containers:
         - name: simulator
-          image: 866972254535.dkr.ecr.us-east-1.amazonaws.com/logflow-simulator:latest
+          image: 866972254535.dkr.ecr.us-east-1.amazonaws.com/logflow-simulator:29
           envFrom:
             - configMapRef:
                 name: logflow-config
+            - secretRef:
+                name: logflow-secrets   # INGEST_API_KEY
           resources:
             requests:
               cpu: "50m"

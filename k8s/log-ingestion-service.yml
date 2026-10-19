@@ -15,12 +15,14 @@ spec:
     spec:
       containers:
         - name: log-ingestion-service
-          image: 866972254535.dkr.ecr.us-east-1.amazonaws.com/logflow-log-ingestion-service:latest
+          image: 866972254535.dkr.ecr.us-east-1.amazonaws.com/logflow-log-ingestion-service:29
           ports:
             - containerPort: 5000
           envFrom:
             - configMapRef:
                 name: logflow-config
+            - secretRef:
+                name: logflow-secrets   # JWT_SECRET, INGEST_API_KEY
           resources:
             requests:
               cpu: "100m"
@@ -34,6 +36,12 @@ spec:
               port: 5000
             initialDelaySeconds: 10
             periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 30
+            periodSeconds: 10
 ---
 apiVersion: v1
 kind: Service

@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: client
-          image: 866972254535.dkr.ecr.us-east-1.amazonaws.com/logflow-client:latest
+          image: 866972254535.dkr.ecr.us-east-1.amazonaws.com/logflow-client:29
           ports:
             - containerPort: 80
           resources:
