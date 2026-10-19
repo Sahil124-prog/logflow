@@ -16,15 +16,16 @@ async function main() {
   await mongoose.connect(process.env.MONGO_URI);
 
   const existing = await User.findOne({ username });
-  if (existing) {
-    existing.role = "admin";
-    await existing.save();
-    console.log(`Promoted existing user '${username}' to admin`);
-  } else {
-    const passwordHash = await bcrypt.hash(password, 10);
-    await User.create({ username, passwordHash, role: "admin" });
-    console.log(`Created admin user '${username}'`);
-  }
+    if (existing) {
+      existing.role = "admin";
+      existing.passwordHash = await bcrypt.hash(password, 10); // reset password too
+      await existing.save();
+      console.log(`Updated '${username}': role=admin, password reset`);
+    } else {
+      const passwordHash = await bcrypt.hash(password, 10);
+      await User.create({ username, passwordHash, role: "admin" });
+      console.log(`Created admin user '${username}'`);
+    }
 
   await mongoose.disconnect();
 }
