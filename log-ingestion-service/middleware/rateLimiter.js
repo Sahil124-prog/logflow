@@ -36,3 +36,4 @@ const rateLimit =
   };
 
 module.exports = rateLimit;
+module.exports.isRedisReady = () => client.isReady;

@@ -75,14 +75,20 @@ app.delete("/cleanup", auth, requireAdmin, async (req, res) => {
   }
 });
 
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("[log-ingestion-service] MongoDB connected"))
-  .catch((err) => console.error("[log-ingestion-service] MongoDB error:", err));
 
-connectPublisher();
+// Only connect and listen when run directly (node index.js), not when a test require()s this file.
+if (require.main === module) {
+  mongoose
+    .connect(process.env.MONGO_URI)
+    .then(() => console.log("[log-ingestion-service] MongoDB connected"))
+    .catch((err) => console.error("[log-ingestion-service] MongoDB error:", err));
 
-const PORT = process.env.PORT || 5001;
-app.listen(PORT, () =>
-  console.log(`log-ingestion-service running on port ${PORT}`),
-);
+  connectPublisher();
+
+  const PORT = process.env.PORT || 5001;
+  app.listen(PORT, () =>
+    console.log(`log-ingestion-service running on port ${PORT}`),
+  );
+}
+
+module.exports = { app };
