@@ -7,6 +7,10 @@
     "dev": "nodemon src/index.js",
     "test": "jest --runInBand --forceExit"
   },
+
+  "jest": {
+    "roots": ["<rootDir>/test"]
+  },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.0.0",
     "amqplib": "^0.10.3",
