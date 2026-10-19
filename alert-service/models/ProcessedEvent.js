@@ -6,4 +6,3 @@ const processedEventSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model("ProcessedEvent", processedEventSchema);
-

@@ -126,6 +126,11 @@ pipeline {
                     bat 'npm ci'
                     bat 'npm test'
                 }
+                // Alert-service tests (threshold, cooldown, race)
+                dir('alert-service') {
+                    bat 'npm ci'
+                    bat 'npm test'
+                }
             }
             post {
                 always {
