@@ -14,8 +14,6 @@ const metricsRouter = require("./routes/metrics");
 const { apiRequestDuration } = require("./metrics");
 const { isRedisReady } = require("./middleware/rateLimiter");
 
-
-
 const deployRoutes = require("./routes/deploys");
 const startDashboardConsumer = require("./consumers/dashboardConsumer");
 
@@ -28,32 +26,7 @@ const allowedOrigins = (
   .split(",")
   .map((o) => o.trim());
 
-const { S3Client, CreateBucketCommand } = require("@aws-sdk/client-s3");
-
-async function ensureS3Bucket() {
-  const s3 = new S3Client({
-    region: process.env.AWS_REGION,
-    endpoint: process.env.AWS_ENDPOINT,
-    forcePathStyle: true,
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    },
-  });
-  try {
-    await s3.send(new CreateBucketCommand({ Bucket: process.env.S3_BUCKET }));
-    console.log(`S3 bucket '${process.env.S3_BUCKET}' created`);
-  } catch (err) {
-    if (
-      err.name === "BucketAlreadyOwnedByYou" ||
-      err.name === "BucketAlreadyExists"
-    ) {
-      console.log(`S3 bucket '${process.env.S3_BUCKET}' already exists`);
-    } else {
-      console.error("S3 bucket creation error:", err.message);
-    }
-  }
-}
+const { ensureBucketWithRetry } = require("./s3");
 
 app.use((req, res, next) => {
   const origin = req.headers.origin;
@@ -123,7 +96,6 @@ app.use("/api/export", exportRoutes);
 app.use("/metrics", metricsRouter);
 app.use("/api/deploys", deployRoutes);
 
-
 io.on("connection", (socket) => {
   console.log("Dashboard connected:", socket.id);
 });
@@ -135,7 +107,7 @@ if (require.main === module) {
     .connect(process.env.MONGO_URI)
     .then(() => {
       console.log("MongoDB connected");
-      ensureS3Bucket();
+      ensureBucketWithRetry(); // not awaited: retries in the background, API keeps serving
     })
     .catch((err) => console.error("MongoDB error:", err));
 
