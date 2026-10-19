@@ -101,13 +101,15 @@ pipeline {
             steps { bat 'npm ci' }
         }
 
-                stage('Test') {
+        stage('Test') {
             environment {
-                // Port 27019, not 27018, so it never clashes with your local test Mongo
+                // CI ports differ from your local test ports (27018 / 6380) so they never clash
                 MONGO_TEST_URI = 'mongodb://127.0.0.1:27019/logflow-test'
+                REDIS_TEST_URL = 'redis://127.0.0.1:6381'
             }
             steps {
                 bat 'docker run -d --rm --name logflow-ci-mongo-%BUILD_NUMBER% -p 27019:27017 mongo:6'
+                bat 'docker run -d --rm --name logflow-ci-redis-%BUILD_NUMBER% -p 6381:6379 redis:7-alpine'
                 // Wait up to 30 s until Mongo answers a ping
                 powershell '''
                     for ($i = 0; $i -lt 30; $i++) {
@@ -117,12 +119,18 @@ pipeline {
                     }
                     Write-Error "Mongo did not start in 30s"; exit 1
                 '''
+                // API tests (root)
                 bat 'npm test'
+                // Ingestion-service tests
+                dir('log-ingestion-service') {
+                    bat 'npm ci'
+                    bat 'npm test'
+                }
             }
             post {
                 always {
-                    // Runs even if the tests fail, so no leftover container
                     bat 'docker rm -f logflow-ci-mongo-%BUILD_NUMBER% || exit /b 0'
+                    bat 'docker rm -f logflow-ci-redis-%BUILD_NUMBER% || exit /b 0'
                 }
             }
         }
