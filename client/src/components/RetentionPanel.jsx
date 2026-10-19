@@ -3,16 +3,19 @@ import axios from "axios";
 
 const API = import.meta.env.VITE_API_URL || "";
 
-export default function RetentionPanel({ auth, logs }) {
+export default function RetentionPanel({ auth, logs, stats, onCleaned }) {
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState(null);
 
-  const retentionDays = 30;
+  // Real values from /api/logs/stats; fall back to the loaded rows until they arrive
+  const retentionDays = stats?.retentionDays ?? 30;
   const oldLogs = logs.filter((l) => {
     const ageDays =
       (Date.now() - new Date(l.timestamp).getTime()) / (1000 * 60 * 60 * 24);
     return ageDays > retentionDays;
   });
+  const oldCount = stats?.olderThanRetention ?? oldLogs.length;
+  const totalCount = stats?.total ?? logs.length;
 
   async function runCleanup() {
     setRunning(true);
@@ -22,6 +25,7 @@ export default function RetentionPanel({ auth, logs }) {
         headers: { Authorization: `Bearer ${auth.token}` },
       });
       setResult({ deleted: res.data.deleted, success: true });
+      onCleaned?.(); // re-fetch totals so the cards update immediately
     } catch (e) {
       setResult({
         error: e.response?.data?.error || "Cleanup failed",
@@ -116,11 +120,15 @@ export default function RetentionPanel({ auth, logs }) {
         }}
       >
         {[
-          { label: "Total logs", value: logs.length, color: "var(--accent)" },
+          {
+            label: "Total logs",
+            value: totalCount.toLocaleString(),
+            color: "var(--accent)",
+          },
           {
             label: `Older than ${retentionDays}d`,
-            value: oldLogs.length,
-            color: oldLogs.length > 0 ? "var(--warn)" : "var(--muted2)",
+            value: oldCount.toLocaleString(),
+            color: oldCount > 0 ? "var(--warn)" : "var(--muted2)",
           },
           {
             label: "Retention days",

@@ -740,6 +740,7 @@ export default function Dashboard({ auth, onLogout }) {
 
   const [logs, setLogs] = useState([]);
   const [alerts, setAlerts] = useState([]);
+  const [stats, setStats] = useState(null); // real DB totals from /api/logs/stats
   const [health, setHealth] = useState(null);
   const [connected, setConnected] = useState(false);
   const [sending, setSending] = useState(false);
@@ -759,7 +760,11 @@ export default function Dashboard({ auth, onLogout }) {
 
   useEffect(() => {
     fetchAll();
-    const interval = setInterval(fetchAlerts, 15000);
+    // Every 15 s: refresh alerts AND re-sync totals with the DB (catches cleanups, missed events)
+    const interval = setInterval(() => {
+      fetchAlerts();
+      fetchStats();
+    }, 15000);
     const socket = io(window.location.origin, {
       transports: ["websocket", "polling"],
     });
@@ -771,6 +776,16 @@ export default function Dashboard({ auth, onLogout }) {
       setLogs((prev) => [log, ...prev].slice(0, 200));
       if (log.level === "error")
         addToast(`${log.service}: ${log.message}`, "error");
+      // Bump the totals instantly instead of waiting for the next sync
+      setStats(
+        (s) =>
+          s && {
+            ...s,
+            total: s.total + 1,
+            errors: s.errors + (log.level === "error" ? 1 : 0),
+            warnings: s.warnings + (log.level === "warn" ? 1 : 0),
+          },
+      );
     });
     socket.on("new-alert", (alert) => {
       setAlerts((prev) => [alert, ...prev]);
@@ -787,7 +802,12 @@ export default function Dashboard({ auth, onLogout }) {
   }, []);
 
   async function fetchAll() {
-    await Promise.all([fetchLogs(), fetchAlerts(), fetchHealth()]);
+    await Promise.all([
+      fetchLogs(),
+      fetchAlerts(),
+      fetchHealth(),
+      fetchStats(),
+    ]);
   }
   async function fetchLogs() {
     try {
@@ -807,6 +827,12 @@ export default function Dashboard({ auth, onLogout }) {
     try {
       const r = await axios.get(API + "/health");
       setHealth(r.data);
+    } catch {}
+  }
+  async function fetchStats() {
+    try {
+      const r = await axios.get(API + "/api/logs/stats", { headers });
+      setStats(r.data);
     } catch {}
   }
 
@@ -915,7 +941,7 @@ export default function Dashboard({ auth, onLogout }) {
         }}
       >
         <SectionLabel>Overview</SectionLabel>
-        <StatCards logs={logs} alerts={alerts} />
+        <StatCards logs={logs} alerts={alerts} stats={stats} />
 
         <SectionLabel>Infrastructure</SectionLabel>
         <div
@@ -951,7 +977,12 @@ export default function Dashboard({ auth, onLogout }) {
               sending={sending}
             />
             <RateLimitPanel auth={auth} />
-            <RetentionPanel auth={auth} logs={logs} />
+            <RetentionPanel
+              auth={auth}
+              logs={logs}
+              stats={stats}
+              onCleaned={fetchStats}
+            />
           </>
         )}
 

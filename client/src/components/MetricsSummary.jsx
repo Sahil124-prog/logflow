@@ -33,26 +33,23 @@ export default function MetricsSummary() {
     }
   }
 
- 
-
   async function fetchMetrics() {
     const [logsTotal, p95, heapMB, eventLoop, errorRate, activeAlerts] =
       await Promise.all([
-        query("sum(logs_received_total)"),
-        
+        query("sum(increase(logs_received_total[1h]))"), // survives counter resets
+
         query(
           "histogram_quantile(0.95, sum by (le) (rate(api_request_duration_seconds_bucket[5m])))",
         ),
         query("nodejs_heap_size_used_bytes / 1024 / 1024"),
         query("nodejs_eventloop_lag_seconds * 1000"),
-        
+
         query(
           "sum(rate(logs_received_total{level='error'}[5m])) / sum(rate(logs_received_total[5m])) * 100",
         ),
         query("active_alerts"),
       ]);
 
-   
     const safeErrorRate =
       isNaN(errorRate) || !isFinite(errorRate) ? 0 : errorRate;
 
@@ -69,13 +66,13 @@ export default function MetricsSummary() {
 
   const cards = [
     {
-      label: "Total logs ingested",
+      label: "Logs ingested (1h)",
       value:
         metrics.logsTotal !== null && !isNaN(metrics.logsTotal)
           ? Math.round(metrics.logsTotal)
           : null,
       unit: "",
-      query: "sum(logs_received_total)",
+      query: "sum(increase(logs_received_total[1h]))",
       color: "var(--accent)",
     },
     {

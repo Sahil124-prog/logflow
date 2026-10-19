@@ -1,21 +1,28 @@
-export default function StatCards({ logs, alerts }) {
-  const total = logs.length;
-  const errors = logs.filter((l) => l.level === "error").length;
-  const warns = logs.filter((l) => l.level === "warn").length;
+export default function StatCards({ logs, alerts, stats }) {
+  // Prefer real DB totals; fall back to the loaded rows until stats arrive
+  const total = stats?.total ?? logs.length;
+  const errors =
+    stats?.errors ?? logs.filter((l) => l.level === "error").length;
+  const warns =
+    stats?.warnings ?? logs.filter((l) => l.level === "warn").length;
   const errorRate =
     total > 0 ? ((errors / total) * 100).toFixed(1) + "%" : "0%";
-  const services = [...new Set(logs.map((l) => l.service))].length;
   const activeAlerts = alerts.filter((a) => !a.resolved).length;
 
   const cards = [
-    { label: "Total logs", value: total, sub: "all time" },
+    { label: "Total logs", value: total.toLocaleString(), sub: "all time" },
     {
       label: "Error rate",
       value: errorRate,
-      sub: `${errors} errors`,
+      sub: `${errors.toLocaleString()} errors`,
       danger: parseFloat(errorRate) > 30,
     },
-    { label: "Warnings", value: warns, sub: "log entries", warn: warns > 10 },
+    {
+      label: "Warnings",
+      value: warns.toLocaleString(),
+      sub: "log entries",
+      warn: warns > 10,
+    },
     {
       label: "Active alerts",
       value: activeAlerts,
