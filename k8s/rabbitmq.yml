@@ -19,13 +19,23 @@ spec:
           ports:
             - containerPort: 5672
             - containerPort: 15672
+                    # tcpSocket, not an exec probe: rabbitmq-diagnostics starts a second Erlang VM
+          # inside the container, which counted against the memory limit and got the pod
+          # OOMKilled. RabbitMQ opens 5672 only at the end of boot, so the port is a fair
+          # readiness signal here (same check the official RabbitMQ operator uses).
+          readinessProbe:
+            tcpSocket:
+              port: 5672
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
           resources:
             requests:
               cpu: "100m"
-              memory: "128Mi"
+              memory: "256Mi"
             limits:
               cpu: "300m"
-              memory: "256Mi"
+              memory: "512Mi"
 ---
 apiVersion: v1
 kind: Service
