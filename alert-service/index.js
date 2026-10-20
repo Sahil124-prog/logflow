@@ -80,42 +80,41 @@ async function checkThreshold(service) {
   });
   if (errorCount < ERROR_THRESHOLD) return;
 
-    if (
-      !existingAlert &&
-      (!recentlyResolved ||
-        Date.now() - new Date(recentlyResolved.updatedAt).getTime() >
-          ALERT_COOLDOWN_MS)
-    ) {
-      try {
-        const alert = await Alert.create({
-          service,
-          errorCount,
-          windowStart,
-          resolved: false,
-        });
-        publishEvent("alert.created", alert);
-        console.log(
-          `[alert-service] Alert created for ${service} — ${errorCount} errors`,
-        );
-      } catch (err) {
-        if (err.code !== 11000) throw err; // only swallow "duplicate key"
-        // Another consumer created the open alert a moment earlier -> update it instead
-        const current = await Alert.findOneAndUpdate(
-          { service, resolved: false },
-          { errorCount },
-          { new: true },
-        );
-        if (current) publishEvent("alert.updated", current);
-      }
-    } else if (existingAlert) {
-      existingAlert.errorCount = errorCount;
-      await existingAlert.save();
-      publishEvent("alert.updated", existingAlert);
+  if (
+    !existingAlert &&
+    (!recentlyResolved ||
+      Date.now() - new Date(recentlyResolved.updatedAt).getTime() >
+        ALERT_COOLDOWN_MS)
+  ) {
+    try {
+      const alert = await Alert.create({
+        service,
+        errorCount,
+        windowStart,
+        resolved: false,
+      });
+      publishEvent("alert.created", alert);
       console.log(
-        `[alert-service] Alert updated for ${service} — ${errorCount} errors`,
+        `[alert-service] Alert created for ${service} — ${errorCount} errors`,
       );
+    } catch (err) {
+      if (err.code !== 11000) throw err; // only swallow "duplicate key"
+      // Another consumer created the open alert a moment earlier -> update it instead
+      const current = await Alert.findOneAndUpdate(
+        { service, resolved: false },
+        { errorCount },
+        { new: true },
+      );
+      if (current) publishEvent("alert.updated", current);
     }
-
+  } else if (existingAlert) {
+    existingAlert.errorCount = errorCount;
+    await existingAlert.save();
+    publishEvent("alert.updated", existingAlert);
+    console.log(
+      `[alert-service] Alert updated for ${service} — ${errorCount} errors`,
+    );
+  }
 }
 
 async function startConsumer(retryDelayMs = 5000) {
@@ -124,7 +123,6 @@ async function startConsumer(retryDelayMs = 5000) {
     const channel = await connection.createChannel();
     await channel.prefetch(1); // one unacked message at a time -> no parallel checkThreshold
 
-    
     await channel.assertExchange(EXCHANGE, "fanout", { durable: true });
     await channel.assertQueue(QUEUE, { durable: true });
     await channel.bindQueue(QUEUE, EXCHANGE, "");
@@ -205,14 +203,27 @@ async function startConsumer(retryDelayMs = 5000) {
   }
 }
 
-if (require.main === module) {
-  mongoose
-    .connect(process.env.MONGO_URI)
-    .then(() => console.log("[alert-service] MongoDB connected"))
-    .catch((err) => console.error("[alert-service] MongoDB error:", err));
+async function connectMongoWithRetry(uri) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await mongoose.connect(uri, { serverSelectionTimeoutMS: 5000 });
+      console.log("[alert-service] MongoDB connected");
+      return;
+    } catch (err) {
+      const delay = Math.min(2000 * 2 ** (attempt - 1), 30000);
+      console.warn(
+        `[alert-service] MongoDB connect failed (attempt ${attempt}): ${err.message} — retrying in ${delay / 1000}s`,
+      );
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+}
 
+if (require.main === module) {
   connectPublisher();
-  startConsumer();
+  // Start consuming only AFTER Mongo is connected — otherwise every message
+  // would fail its DB queries and be pushed through retry → DLQ for nothing
+  connectMongoWithRetry(process.env.MONGO_URI).then(() => startConsumer());
 }
 
 module.exports = { checkThreshold, ERROR_THRESHOLD, ALERT_COOLDOWN_MS };

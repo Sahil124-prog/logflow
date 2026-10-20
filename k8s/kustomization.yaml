@@ -1,0 +1,18 @@
+# Base: every LogFlow object. Apply with:  kubectl apply -k k8s/
+# (k8s/examples/ is deliberately NOT listed — it holds placeholder secrets.)
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - configmap.yml
+  - mongodb.yml
+  - rabbitmq.yml
+  - redis.yml
+  - deployment.yml
+  - service.yml
+  - log-ingestion-service.yml
+  - alert-service.yml
+  - notification-service.yml
+  - simulator.yml
+  - client.yml
+  - hpa.yml
+  - cronjob.yml

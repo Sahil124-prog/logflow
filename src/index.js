@@ -100,16 +100,39 @@ io.on("connection", (socket) => {
   console.log("Dashboard connected:", socket.id);
 });
 
+
+// Retry the initial Mongo connection forever (capped backoff: 2s, 4s, 8s, 16s, 30s, 30s...).
+// mongoose.connect() alone tries ONCE — if Mongo starts later (K8s, cold boot), the API
+// would stay disconnected forever while the process keeps running.
+async function connectMongoWithRetry(uri) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await mongoose.connect(uri, { serverSelectionTimeoutMS: 5000 });
+      console.log("MongoDB connected");
+      return;
+    } catch (err) {
+      const delay = Math.min(2000 * 2 ** (attempt - 1), 30000);
+      console.warn(`MongoDB connect failed (attempt ${attempt}): ${err.message} — retrying in ${delay / 1000}s`);
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+}
+
+
 // Only connect to Mongo/RabbitMQ and listen when run directly (node src/index.js),
 // not when a test file require()s this module.
 if (require.main === module) {
-  mongoose
-    .connect(process.env.MONGO_URI)
-    .then(() => {
-      console.log("MongoDB connected");
+  // mongoose
+  //   .connect(process.env.MONGO_URI)
+  //   .then(() => {
+  //     console.log("MongoDB connected");
+  //     ensureBucketWithRetry(); // not awaited: retries in the background, API keeps serving
+  //   })
+  //   .catch((err) => console.error("MongoDB error:", err));
+
+    connectMongoWithRetry(process.env.MONGO_URI).then(() => {
       ensureBucketWithRetry(); // not awaited: retries in the background, API keeps serving
-    })
-    .catch((err) => console.error("MongoDB error:", err));
+    });
 
   startDashboardConsumer(io);
 

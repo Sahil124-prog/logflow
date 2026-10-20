@@ -1,0 +1,48 @@
+# minikube overlay: same manifests as EKS, with three local changes.
+# Lives OUTSIDE k8s/ on purpose: an overlay inside its own base is a cycle.
+# Preview:  kubectl kustomize k8s-minikube
+# Apply:    kubectl apply -k k8s-minikube
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../k8s
+
+# 1) Use the images loaded with "minikube image load" instead of ECR
+images:
+  - name: 866972254535.dkr.ecr.us-east-1.amazonaws.com/logflow-api
+    newName: logflow-api
+    newTag: v2
+  - name: 866972254535.dkr.ecr.us-east-1.amazonaws.com/logflow-log-ingestion-service
+    newName: logflow-log-ingestion-service
+    newTag: v2
+  - name: 866972254535.dkr.ecr.us-east-1.amazonaws.com/logflow-alert-service
+    newName: logflow-alert-service
+    newTag: v2
+  - name: 866972254535.dkr.ecr.us-east-1.amazonaws.com/logflow-notification-service
+    newName: logflow-notification-service
+    newTag: local
+  - name: 866972254535.dkr.ecr.us-east-1.amazonaws.com/logflow-client
+    newName: logflow-client
+    newTag: local
+  - name: 866972254535.dkr.ecr.us-east-1.amazonaws.com/logflow-simulator
+    newName: logflow-simulator
+    newTag: local
+
+# 2) One replica each — a laptop, not a production cluster
+replicas:
+  - name: logflow-api
+    count: 1
+  - name: log-ingestion-service
+    count: 1
+  - name: client
+    count: 1
+
+# 3) No HPA: minikube has no metrics-server by default, and its
+#    minReplicas: 2 would override the replica count above
+patches:
+  - patch: |-
+      $patch: delete
+      apiVersion: autoscaling/v2
+      kind: HorizontalPodAutoscaler
+      metadata:
+        name: logflow-hpa

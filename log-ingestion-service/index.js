@@ -76,12 +76,27 @@ app.delete("/cleanup", auth, requireAdmin, async (req, res) => {
 });
 
 
+async function connectMongoWithRetry(uri) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await mongoose.connect(uri, { serverSelectionTimeoutMS: 5000 });
+      console.log("[log-ingestion-service] MongoDB connected");
+      return;
+    } catch (err) {
+      const delay = Math.min(2000 * 2 ** (attempt - 1), 30000);
+      console.warn(
+        `[log-ingestion-service] MongoDB connect failed (attempt ${attempt}): ${err.message} — retrying in ${delay / 1000}s`,
+      );
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+}
+
+
+
 // Only connect and listen when run directly (node index.js), not when a test require()s this file.
 if (require.main === module) {
-  mongoose
-    .connect(process.env.MONGO_URI)
-    .then(() => console.log("[log-ingestion-service] MongoDB connected"))
-    .catch((err) => console.error("[log-ingestion-service] MongoDB error:", err));
+    connectMongoWithRetry(process.env.MONGO_URI);
 
   connectPublisher();
 
