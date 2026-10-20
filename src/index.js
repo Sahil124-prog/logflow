@@ -130,14 +130,37 @@ if (require.main === module) {
   //   })
   //   .catch((err) => console.error("MongoDB error:", err));
 
-    connectMongoWithRetry(process.env.MONGO_URI).then(() => {
-      ensureBucketWithRetry(); // not awaited: retries in the background, API keeps serving
-    });
+  connectMongoWithRetry(process.env.MONGO_URI).then(() => {
+    ensureBucketWithRetry(); // not awaited: retries in the background, API keeps serving
+  });
 
   startDashboardConsumer(io);
 
   const PORT = process.env.PORT || 5000;
   server.listen(PORT, () => console.log(`LogFlow API running on port ${PORT}`));
+
+  // Graceful shutdown: Kubernetes sends SIGTERM, then SIGKILL after 30 s.
+  // Stop taking new connections, let in-flight requests finish, close DB, exit 0.
+  const shutdown = (signal) => {
+    console.log(`[shutdown] ${signal} received — closing gracefully`);
+    // Safety net: never hang until Kubernetes has to SIGKILL us
+    setTimeout(() => {
+      console.error("[shutdown] still busy after 10 s — forcing exit");
+      process.exit(1);
+    }, 10000).unref();
+    // io.close() disconnects Socket.IO clients AND closes the HTTP server;
+    // its callback runs once in-flight requests have finished
+    io.close(async () => {
+      await mongoose.connection.close();
+      console.log("[shutdown] clean exit");
+      process.exit(0);
+    });
+  };
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT")); // Ctrl+C locally
+  
 }
+
+
 
 module.exports = { app, server };

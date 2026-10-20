@@ -11,13 +11,13 @@ resources:
 images:
   - name: 866972254535.dkr.ecr.us-east-1.amazonaws.com/logflow-api
     newName: logflow-api
-    newTag: v2
+    newTag: v3
   - name: 866972254535.dkr.ecr.us-east-1.amazonaws.com/logflow-log-ingestion-service
     newName: logflow-log-ingestion-service
-    newTag: v2
+    newTag: v3
   - name: 866972254535.dkr.ecr.us-east-1.amazonaws.com/logflow-alert-service
     newName: logflow-alert-service
-    newTag: v2
+    newTag: v3
   - name: 866972254535.dkr.ecr.us-east-1.amazonaws.com/logflow-notification-service
     newName: logflow-notification-service
     newTag: local

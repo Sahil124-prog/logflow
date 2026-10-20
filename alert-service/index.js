@@ -22,6 +22,11 @@ const RETRY_DELAY_MS = 10000;
 const RETRY_QUEUE = "alerts.retry.queue";
 const DLQ = "alerts.dlq";
 
+// Shutdown state: the active consumer, how many messages are mid-processing, and a flag
+let shuttingDown = false;
+let consumer = null;
+let inFlight = 0;
+
 // const lambdaClient = new LambdaClient({
 //   region: "us-east-1",
 //   credentials: {
@@ -138,9 +143,10 @@ async function startConsumer(retryDelayMs = 5000) {
 
     await channel.assertQueue(DLQ, { durable: true });
 
-    channel.consume(QUEUE, async (msg) => {
+    const { consumerTag } = await channel.consume(QUEUE, async (msg) => {
       if (!msg) return;
       let eventId, eventType, log;
+      inFlight++; // counted until the finally below, however the handler ends
       try {
         ({
           eventId,
@@ -187,13 +193,18 @@ async function startConsumer(retryDelayMs = 5000) {
           );
         }
         channel.ack(msg);
+      } finally {
+        inFlight--;
       }
     });
+    consumer = { connection, channel, consumerTag };
 
     console.log("[alert-service] listening on", QUEUE);
-    connection.on("close", () =>
-      setTimeout(() => startConsumer(retryDelayMs), retryDelayMs),
-    );
+    // Reconnect when RabbitMQ drops us — but not when WE closed it during shutdown
+    connection.on("close", () => {
+      if (!shuttingDown)
+        setTimeout(() => startConsumer(retryDelayMs), retryDelayMs);
+    });
   } catch (err) {
     console.error(
       "[alert-service] consumer connect failed, retrying:",
@@ -224,6 +235,32 @@ if (require.main === module) {
   // Start consuming only AFTER Mongo is connected — otherwise every message
   // would fail its DB queries and be pushed through retry → DLQ for nothing
   connectMongoWithRetry(process.env.MONGO_URI).then(() => startConsumer());
+
+  // Graceful shutdown: stop new deliveries, finish the current message, close, exit 0
+  const shutdown = async (signal) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    console.log(
+      `[alert-service] ${signal} received — shutting down gracefully`,
+    );
+    setTimeout(() => {
+      console.error("[alert-service] still busy after 10 s — forcing exit");
+      process.exit(1);
+    }, 10000).unref();
+    try {
+      if (consumer) await consumer.channel.cancel(consumer.consumerTag); // no new messages
+      while (inFlight > 0) await new Promise((r) => setTimeout(r, 100)); // finish current one
+      if (consumer) await consumer.connection.close();
+      await mongoose.connection.close();
+      console.log("[alert-service] clean exit");
+      process.exit(0);
+    } catch (err) {
+      console.error("[alert-service] shutdown error:", err.message);
+      process.exit(1);
+    }
+  };
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
 }
 
 module.exports = { checkThreshold, ERROR_THRESHOLD, ALERT_COOLDOWN_MS };

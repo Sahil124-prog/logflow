@@ -96,14 +96,33 @@ async function connectMongoWithRetry(uri) {
 
 // Only connect and listen when run directly (node index.js), not when a test require()s this file.
 if (require.main === module) {
-    connectMongoWithRetry(process.env.MONGO_URI);
+  connectMongoWithRetry(process.env.MONGO_URI);
 
   connectPublisher();
 
   const PORT = process.env.PORT || 5001;
-  app.listen(PORT, () =>
+  const server = app.listen(PORT, () =>
     console.log(`log-ingestion-service running on port ${PORT}`),
   );
+  // Graceful shutdown: stop accepting requests, finish in-flight ones, close DB, exit 0
+  const shutdown = (signal) => {
+    console.log(
+      `[log-ingestion-service] ${signal} received — closing gracefully`,
+    );
+    setTimeout(() => {
+      console.error(
+        "[log-ingestion-service] still busy after 10 s — forcing exit",
+      );
+      process.exit(1);
+    }, 10000).unref();
+    server.close(async () => {
+      await mongoose.connection.close();
+      console.log("[log-ingestion-service] clean exit");
+      process.exit(0);
+    });
+  };
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
 }
 
 module.exports = { app };
