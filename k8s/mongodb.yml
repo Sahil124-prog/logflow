@@ -1,3 +1,20 @@
+# MongoDB with a persistent disk: data now survives pod restarts, rescheduling and
+# "minikube stop/start". The disk is a PersistentVolumeClaim; Kubernetes picks the
+# real storage from the cluster's default StorageClass:
+#   minikube -> "standard" (a folder inside the minikube node, hostPath provisioner)
+#   EKS      -> gp2/gp3 EBS volume (needs the EBS CSI driver add-on)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongodb-data
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce        # one node at a time can mount it (an EBS disk works this way)
+  resources:
+    requests:
+      storage: 2Gi
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -5,6 +22,11 @@ metadata:
   namespace: default
 spec:
   replicas: 1
+  # Recreate, not RollingUpdate: the old pod must release the ReadWriteOnce disk
+  # before the new one can mount it, and two mongod processes must never share
+  # one data directory.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: mongodb
@@ -18,6 +40,9 @@ spec:
           image: mongo:6
           ports:
             - containerPort: 27017
+          volumeMounts:
+            - name: data
+              mountPath: /data/db   # where mongod keeps its files
           resources:
             requests:
               cpu: "250m"
@@ -25,6 +50,10 @@ spec:
             limits:
               cpu: "500m"
               memory: "512Mi"
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: mongodb-data
 ---
 apiVersion: v1
 kind: Service
