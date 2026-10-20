@@ -1,0 +1,46 @@
+# One front door for the whole app — the K8s equivalent of nginx/nginx.conf in Compose.
+# Needs an Ingress controller: minikube -> "minikube addons enable ingress" (class nginx).
+# On EKS you'd typically use the AWS Load Balancer Controller (ingressClassName: alb) instead.
+# /metrics is deliberately NOT routed — same as "deny all" in the Compose nginx.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: logflow-ingress
+  namespace: default
+  annotations:
+    # Socket.IO keeps a WebSocket open for minutes; NGINX's default 60s would cut it
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: logflow-service
+                port:
+                  number: 80
+          - path: /socket.io
+            pathType: Prefix
+            backend:
+              service:
+                name: logflow-service
+                port:
+                  number: 80
+          - path: /health
+            pathType: Exact
+            backend:
+              service:
+                name: logflow-service
+                port:
+                  number: 80
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: client-service
+                port:
+                  number: 80

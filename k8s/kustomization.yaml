@@ -16,3 +16,4 @@ resources:
   - client.yml
   - hpa.yml
   - cronjob.yml
+  - ingress.yml
