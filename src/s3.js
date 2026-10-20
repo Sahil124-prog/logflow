@@ -44,13 +44,13 @@ async function ensureBucketWithRetry(maxAttempts = 6) {
     } catch (err) {
       if (attempt === maxAttempts) {
         console.error(
-          `[s3] giving up at startup: ${err.message} — exports will retry on demand`,
+          `[s3] giving up at startup: ${err.name}: ${err.message || "(no message)"} — exports will retry on demand`,
         );
         return;
       }
       const delay = 2000 * 2 ** (attempt - 1);
       console.warn(
-        `[s3] bucket check failed (${attempt}/${maxAttempts}): ${err.message} — retrying in ${delay / 1000}s`,
+        `[s3] bucket check failed (${attempt}/${maxAttempts}): ${err.name}: ${err.message || "(no message)"} — retrying in ${delay / 1000}s`,
       );
       await new Promise((r) => setTimeout(r, delay));
     }
